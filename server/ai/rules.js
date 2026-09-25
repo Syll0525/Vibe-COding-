@@ -35,9 +35,9 @@ const NAME_PARTS = {
 function pick(arr, seed) { return arr[Math.abs(seed) % arr.length]; }
 function hashStr(s) { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return h; }
 
-export function ruleProfile(description = '', name = '') {
+export function ruleProfile(description = '', name = '', salt = 0) {
   const text = String(description).toLowerCase();
-  const seed = hashStr(text + name);
+  const seed = hashStr(text + name) ^ salt;
   const p = {
     name: name || `${pick(NAME_PARTS.a, seed)} ${pick(NAME_PARTS.b, seed >> 3)}`,
     gait: 'walk', speed: 1, jumpiness: 0.15, bounce: 0.4, sociability: 0.45, musicLove: 0.3,

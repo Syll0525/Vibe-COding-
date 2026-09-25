@@ -32,7 +32,8 @@ The phones and the display computer must be on the same Wi-Fi network. The QR co
 | **AI-driven movement and behaviour.** The profile changes the actual simulation: robots only move in 4 directions, gliders drift, zoomers are fast, jumpy characters hop on their own, friendly ones wave at people nearby, and music lovers dance by themselves on the stage. The display animates each gait in its own way (waddle, bounce, float, lean, twirl), plus idle animations (nap, spin, look around). | `server/game/Room.js`, `public/js/display/characters.js` |
 | **Real-time multiplayer.** The server runs the simulation at 30 Hz and sends snapshots to the displays at 20 Hz, which interpolate between them. Phones get their own HUD updates. If a phone drops off Wi-Fi or its screen locks, the player can rejoin within 45 s and keep the same character (token-based). | `server/net.js`, `server/rooms.js` |
 | **Phone as controller.** Floating joystick, **A** (interact), **B** (jump), ★ ability with a cooldown, emotes, haptics, wake-lock, chat with quick phrases. Keyboard also works for desktop testing: WASD, Space, E, Q. | `public/play.html`, `public/js/play/*` |
-| **Projector display.** Auto-framing camera that follows all players, a minimap, leaderboard, chat log, speech bubbles, landmark fact cards, particles and WebAudio sounds with a sape-style party loop. | `public/display.html`, `public/js/display/*` |
+| **3D projector display (Three.js).** A low-poly, San Andreas-style Kuching with sunlight and shadows, asphalt streets with yellow lines, raised pavements, power poles with sagging wires, traffic lights, taxis and cars that stop for players, sampans on the river, and Mount Santubong on the horizon. Players' drawings stand in the world as paper cut-outs that turn to face the camera. Camera modes (press **C** or 🎥): *Auto*, *Everyone* (group view), *Chase cam* (GTA-style, behind a player) and *City tour*. There's also a minimap, leaderboard, chat, speech bubbles, fact cards, particles and WebAudio sound. | `public/js/display/three/*` |
+| **Classic 2D view** for slow projector laptops: `/display?view=2d` (or the 2D button). `/display?quality=low` keeps 3D but turns off shadows. | `public/js/display/renderer2d.js` |
 | **Stylized Kuching map.** The Sarawak River with the Darul Hana Bridge and sampan jetties. North bank: DUN (golden roof), Fort Margherita, the Astana and kampung houses. South bank: the Waterfront and its stage, Main Bazaar shophouses, Square Tower, Chinese History Museum, Tua Pek Kong, Old Courthouse, Borneo Cultures Museum, Old State Mosque, Top Spot, Padang Merdeka and the Great Cat of Kuching. | `shared/map.js`, `public/js/display/world.js`, `public/js/display/art.js` |
 | **Interactions and mini-games.** Collect kolo mee, kek lapis and laksa. **Cat Hunt**: find 8 hidden cats. **Passport**: visit 11 landmarks. **High-fives** that make friends. Sampan rides. A hawker stall. Dance on the stage for points. Timed rounds (**Kolo Mee Rush** and **Waterfront Dance-Off**) with winners. Abilities: Dash, Super Jump (you can leap over the river), Food Magnet, Boombox party, Friend Aura. | `server/game/Room.js` |
 | **Host controls** (bottom-right of the display) | add/remove AI bots, start a round, mute, fullscreen |
@@ -52,7 +53,9 @@ server/
   game/Bot.js      NPC doodles that use the same input API as phones
   ai/              Claude character designer + offline rule engine + profile validation
 public/
-  display.html     projector client (canvas renderer)
+  display.html     projector client; js/display/main.js = networking + HUD,
+                   js/display/three/ = 3D renderer (city, buildings, characters, camera),
+                   js/display/renderer2d.js = 2D fallback (same interface)
   play.html        phone client (scan → describe → controller)
 test/              node:test — extraction, personality rules, simulation, socket end-to-end
 ```
@@ -61,7 +64,7 @@ How the design leaves room to grow:
 
 - **More players and more rooms.** `Room` doesn't touch sockets, so rooms can be sharded across processes, with a Socket.IO Redis adapter plus a shared room registry replacing `RoomManager`. Snapshots are small; delta compression or interest management (send only what's near the camera) can go into `Room.snapshot()`.
 - **Better AI animation.** Everything visual about a character goes through `CharacterView.draw()`, driven by the profile. That's where to add part segmentation (e.g. asking Claude for limb bounding boxes, then mesh-deform or skeletal rigs) without changing the network protocol.
-- **More detailed Kuching.** All map data is in `shared/map.js`, and all art is in `art.js`/`world.js` as pre-rendered props. You can replace them with illustrated PNG tiles or a Tiled export without touching gameplay code.
+- **More detailed Kuching.** All map data is in `shared/map.js`. The 3D models are built from code in `three/buildings.js` and `three/city.js`, so you can swap in real glTF models of Kuching landmarks one at a time. You can replace them with illustrated PNG tiles or a Tiled export without touching gameplay code.
 
 ## Configuration
 

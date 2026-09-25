@@ -125,7 +125,7 @@ export class Room extends EventEmitter {
       'likes to dance', 'waddles like a penguin and is super friendly',
     ];
     const desc = descs[Math.floor(this.rand() * descs.length)];
-    const prof = ruleProfile(desc);
+    const prof = ruleProfile(desc, '', Math.floor(this.rand() * 1e9));
     prof.emoji = '🤖';
     return this.addPlayer({ name: prof.name, profile: prof, bot: true });
   }

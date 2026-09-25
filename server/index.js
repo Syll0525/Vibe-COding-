@@ -24,6 +24,8 @@ export function createServer() {
   app.use(express.json({ limit: `${Math.ceil(MAX_SPRITE_BYTES / 1000) + 50}kb` }));
   app.use(express.static(path.join(root, 'public'), { extensions: ['html'] }));
   app.use('/shared', express.static(path.join(root, 'shared')));
+  // Three.js served locally so the projector works without internet
+  app.use('/vendor/three', express.static(path.join(root, 'node_modules', 'three', 'build')));
 
   // LAN addresses so the projector can show a QR code phones can actually reach
   app.get('/api/info', (_req, res) => {

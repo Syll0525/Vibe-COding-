@@ -9,7 +9,7 @@ import {
 import { makeCanvas, drawBuilding, drawTree, drawLamp, drawHiddenCat } from './art.js';
 
 const COLORS = {
-  [T.GRASS]: '#8fd16a', [T.ROAD]: '#c9c2b4', [T.WATER]: '#3aa0d8', [T.BOARDWALK]: '#d9a566',
+  [T.GRASS]: '#8fd16a', [T.ROAD]: '#5d5d63', [T.WATER]: '#3aa0d8', [T.BOARDWALK]: '#d9a566',
   [T.BRIDGE]: '#f5c542', [T.PLAZA]: '#efe3cc', [T.MUD]: '#c7a46e', [T.JUNGLE]: '#2f7d3b',
 };
 
@@ -45,11 +45,16 @@ export function buildGround() {
         ctx.strokeStyle = 'rgba(150,120,80,0.18)'; ctx.lineWidth = 1;
         ctx.strokeRect(px + 1, py + 1, TILE / 2, TILE / 2); ctx.strokeRect(px + TILE / 2, py + TILE / 2, TILE / 2 - 1, TILE / 2 - 1);
       } else if (t === T.ROAD) {
+        // asphalt speckle + lane markings (yellow between two-lane roads, white dashes on single lanes)
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        for (let k = 0; k < 4; k++) ctx.fillRect(px + rand() * TILE, py + rand() * TILE, 3, 2);
         const horiz = tileAt(x - 1, y) === T.ROAD && tileAt(x + 1, y) === T.ROAD;
-        const nextRoadBelow = tileAt(x, y + 1) === T.ROAD, nextRoadRight = tileAt(x + 1, y) === T.ROAD;
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        if (horiz && nextRoadBelow && x % 2 === 0) ctx.fillRect(px + 6, py + TILE - 2, TILE / 2, 4);
-        if (!horiz && nextRoadRight && y % 2 === 0) ctx.fillRect(px + TILE - 2, py + 6, 4, TILE / 2);
+        const below = tileAt(x, y + 1) === T.ROAD, above = tileAt(x, y - 1) === T.ROAD;
+        const right = tileAt(x + 1, y) === T.ROAD, left = tileAt(x - 1, y) === T.ROAD;
+        if (horiz && below && !above) { ctx.fillStyle = '#f2c230'; ctx.fillRect(px, py + TILE - 3, TILE + 1, 2); ctx.fillRect(px, py + TILE + 1, TILE + 1, 2); }
+        else if (horiz && !below && !above && x % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(px + 6, py + TILE / 2 - 1.5, TILE / 2, 3); }
+        if (!horiz && right && !left) { ctx.fillStyle = '#f2c230'; ctx.fillRect(px + TILE - 3, py, 2, TILE + 1); ctx.fillRect(px + TILE + 1, py, 2, TILE + 1); }
+        else if (!horiz && right && left && y % 2 === 0 && tileAt(x, y - 1) === T.ROAD) { ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(px + TILE / 2 - 1.5, py + 6, 3, TILE / 2); }
       } else if (t === T.JUNGLE) {
         for (let k = 0; k < 3; k++) {
           ctx.beginPath();
@@ -57,6 +62,20 @@ export function buildGround() {
           ctx.fillStyle = ['#2f7d3b', '#3a9448', '#236b30'][k]; ctx.fill();
         }
       }
+    }
+  }
+
+  // Pavements (sidewalks) wherever land meets a road
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      const t = tileAt(x, y);
+      if (t === T.ROAD || t === T.WATER || t === T.JUNGLE || t === T.BRIDGE) continue;
+      const px = x * TILE, py = y * TILE, w = 12;
+      ctx.fillStyle = '#d8d0c0';
+      if (tileAt(x, y - 1) === T.ROAD) ctx.fillRect(px, py, TILE, w);
+      if (tileAt(x, y + 1) === T.ROAD) ctx.fillRect(px, py + TILE - w, TILE, w);
+      if (tileAt(x - 1, y) === T.ROAD) ctx.fillRect(px, py, w, TILE);
+      if (tileAt(x + 1, y) === T.ROAD) ctx.fillRect(px + TILE - w, py, w, TILE);
     }
   }
 
@@ -108,7 +127,7 @@ export function buildGround() {
 
   // Street names for flavour
   ctx.font = 'bold 15px "Baloo 2", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(60,50,80,0.55)';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
   ctx.fillText('MAIN BAZAAR', 3 * TILE, 27 * TILE);
   ctx.fillText('JALAN CARPENTER', 43 * TILE, 27 * TILE);
   ctx.fillText('JALAN INDIA', 3 * TILE, 38.5 * TILE);
