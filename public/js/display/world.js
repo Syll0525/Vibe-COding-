@@ -132,6 +132,8 @@ export function buildGround() {
   ctx.fillText('JALAN CARPENTER', 43 * TILE, 27 * TILE);
   ctx.fillText('JALAN INDIA', 3 * TILE, 38.5 * TILE);
   ctx.fillText('JALAN ASTANA', 14 * TILE, 7.5 * TILE);
+  ctx.fillText('JALAN TAMAN', 4 * TILE, 46 * TILE);
+  ctx.fillText('JALAN TAMAN', 40 * TILE, 46 * TILE);
   ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = 'bold 22px "Baloo 2", sans-serif';
   ctx.fillText('~ SUNGAI SARAWAK ~', 4 * TILE, 17.2 * TILE);
   ctx.fillText('~ SARAWAK RIVER ~', 42 * TILE, 17.4 * TILE);

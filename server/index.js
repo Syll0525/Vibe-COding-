@@ -11,6 +11,7 @@ import express from 'express';
 import { Server } from 'socket.io';
 import QRCode from 'qrcode';
 import { RoomManager } from './rooms.js';
+import { Store } from './store.js';
 import { attachNetwork } from './net.js';
 import { designCharacter, aiEnabled } from './ai/personality.js';
 import { MAX_SPRITE_BYTES } from '../shared/constants.js';
@@ -18,7 +19,7 @@ import { MAX_SPRITE_BYTES } from '../shared/constants.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT) || 3000;
 
-export function createServer() {
+export function createServer({ dataFile = process.env.DATA_FILE ?? path.join(root, 'data', 'save.json') } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: `${Math.ceil(MAX_SPRITE_BYTES / 1000) + 50}kb` }));
@@ -63,11 +64,12 @@ export function createServer() {
     ? https.createServer({ key: fs.readFileSync(process.env.HTTPS_KEY), cert: fs.readFileSync(process.env.HTTPS_CERT) }, app)
     : http.createServer(app);
   const io = new Server(server, { maxHttpBufferSize: MAX_SPRITE_BYTES + 20_000, cors: { origin: false } });
-  const rooms = new RoomManager();
+  const store = new Store(dataFile);
+  const rooms = new RoomManager({ store });
   rooms.start();
   const net = attachNetwork(io, rooms);
-  const close = () => new Promise((resolve) => { net.stop(); rooms.stop(); io.close(() => resolve()); });
-  return { app, server, io, rooms, close };
+  const close = () => new Promise((resolve) => { net.stop(); rooms.stop(); store.flush(); io.close(() => resolve()); });
+  return { app, server, io, rooms, store, close };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

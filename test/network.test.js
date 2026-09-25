@@ -7,7 +7,7 @@ const once = (sock, ev) => new Promise((r) => sock.once(ev, r));
 const call = (sock, ev, data) => new Promise((r) => sock.emit(ev, data, r));
 
 test('display creates a room, phones join, move and chat in real time', async (t) => {
-  const { server, close } = createServer();
+  const { server, close } = createServer({ dataFile: null });
   await new Promise((r) => server.listen(0, r));
   const url = `http://localhost:${server.address().port}`;
   t.after(close);

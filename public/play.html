@@ -109,6 +109,7 @@
   <section id="s-play" class="screen hidden">
     <header id="hud">
       <span class="pill" id="hud-me"></span>
+      <span class="pill coin-pill">🪙 <b id="hud-coins">0</b></span>
       <span class="pill">⭐ <b id="hud-score">0</b></span>
       <span class="pill">💞 <b id="hud-friends">0</b></span>
       <span class="pill">🐱 <b id="hud-cats">0</b></span>
@@ -116,8 +117,10 @@
       <button class="pill btn-chat" id="btn-chat">💬<i id="chat-dot" class="dot hidden"></i></button>
     </header>
     <div id="event-strip" class="hidden"></div>
+    <div id="race-strip" class="hidden"></div>
+    <div id="race-invite" class="hidden"><span id="race-invite-text"></span><button class="btn small teal" id="race-invite-join">Join!</button></div>
     <div id="hint"></div>
-    <div id="pad">
+    <div id="pad" class="tab-panel">
       <div id="stick-zone"><div id="stick-base"><div id="stick-knob"></div></div><span class="zone-label">Move</span></div>
       <div id="buttons">
         <div class="emotes">
@@ -126,10 +129,63 @@
         </div>
         <button id="btn-ability" class="round ability-btn"><span id="ability-icon">★</span><i id="ability-cd"></i></button>
         <button id="btn-jump" class="round jump-btn">B<small>jump</small></button>
-        <button id="btn-a" class="round a-btn">A<small>use</small></button>
+        <button id="btn-a" class="round a-btn">A<small id="a-label">use</small></button>
       </div>
     </div>
+
+    <!-- 🏠 Home editor -->
+    <div id="panel-home" class="tab-panel scroll hidden">
+      <div class="panel-head"><h3>🏠 My Home <small id="home-plot"></small></h3><button class="btn small teal" id="btn-go-home">🚶 Go home</button></div>
+      <p class="muted small" id="home-help">Pick something from your items, then tap a square to place it. Tap a placed thing to move or remove it.</p>
+      <canvas id="home-grid" width="600" height="500"></canvas>
+      <div class="row tools">
+        <span id="home-selected" class="pill">Nothing selected</span>
+        <button class="btn small secondary" id="btn-home-rotate">↻ Rotate</button>
+        <button class="btn small secondary" id="btn-home-remove">🗑️ Remove</button>
+      </div>
+      <h4>🎒 My items</h4>
+      <div id="home-tray" class="tray"></div>
+      <h4>🏡 House style</h4>
+      <div id="home-styles" class="styles"></div>
+      <h4>🎨 Walls</h4>
+      <div id="home-walls" class="swatch-row"></div>
+      <h4>🎨 Roof</h4>
+      <div id="home-roofs" class="swatch-row"></div>
+    </div>
+
+    <!-- 🛒 Shop -->
+    <div id="panel-shop" class="tab-panel scroll hidden">
+      <div class="panel-head"><h3>🛒 Kedai Draw</h3><span class="pill coin-pill big">🪙 <b id="shop-coins">0</b></span></div>
+      <div class="shop-tabs" id="shop-tabs"></div>
+      <div id="shop-list" class="shop-list"></div>
+    </div>
+
+    <!-- 🏁 Games -->
+    <div id="panel-games" class="tab-panel scroll hidden">
+      <div class="panel-head"><h3>🏁 Games — earn coins!</h3></div>
+      <div id="games-list" class="games-list"></div>
+    </div>
+
+    <nav id="tabs">
+      <button data-tab="pad" class="on">🎮<span>Play</span></button>
+      <button data-tab="home">🏠<span>Home</span></button>
+      <button data-tab="shop">🛒<span>Shop</span></button>
+      <button data-tab="games">🏁<span>Games</span></button>
+    </nav>
   </section>
+
+  <!-- Food quiz -->
+  <div id="quiz" class="hidden">
+    <div class="card quiz-card">
+      <div class="quiz-top"><b>🍜 Top Spot Food Quiz</b><span id="quiz-n"></span></div>
+      <div id="quiz-emoji" class="quiz-emoji"></div>
+      <p id="quiz-clue" class="quiz-clue"></p>
+      <div id="quiz-choices" class="quiz-choices"></div>
+      <p id="quiz-feedback" class="quiz-feedback"></p>
+    </div>
+  </div>
+
+  <div id="bigcount" class="hidden"></div>
 
   <!-- Chat drawer -->
   <aside id="chat" class="hidden">

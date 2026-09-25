@@ -3,6 +3,8 @@
 import { ABILITY_INFO, INPUT_HZ, GAITS } from '/shared/constants.js';
 import { fileToCanvas, extractToCanvas, setupDrawPad } from './scan.js';
 import { setupPad } from './pad.js';
+import { setupHome } from './home.js';
+import { setupGames } from './games.js';
 
 const $ = (id) => document.getElementById(id);
 const screens = ['s-join', 's-scan', 's-draw', 's-preview', 's-describe', 's-profile', 's-play'];
@@ -164,6 +166,25 @@ $('btn-enter').onclick = () => enterWorld();
 // ------------------------------------------------------------------ 4. play
 const socket = io({ transports: ['websocket', 'polling'], autoConnect: false });
 let joined = false;
+let lastHud = null;
+const home = setupHome({ socket, toast, buzz });
+const games = setupGames({ socket, toast, buzz, getHud: () => lastHud, getMe: () => state.me });
+
+// bottom tabs: Play / Home / Shop / Games
+let currentTab = 'pad';
+function showTab(tab) {
+  currentTab = tab;
+  for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
+  for (const id of ['pad', 'panel-home', 'panel-shop', 'panel-games']) {
+    $(id).classList.toggle('hidden', id !== (tab === 'pad' ? 'pad' : `panel-${tab}`));
+  }
+  $('hint').classList.toggle('hidden', tab !== 'pad');
+  if (tab === 'games') games.renderGames();
+  if (tab === 'home' || tab === 'shop') home.refresh();
+  if (tab !== 'pad') socket.emit('input', { mx: 0, my: 0 });
+}
+for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => showTab(b.dataset.tab);
+document.addEventListener('dk:tab', (e) => showTab(e.detail));
 
 function enterWorld() {
   $('enter-error').textContent = '';
@@ -188,6 +209,7 @@ function join() {
     state.profile = res.profile;
     sessionStorage.setItem('dk-session', JSON.stringify({ code: state.code, name: res.name, profile: res.profile, sprite: state.sprite }));
     startController();
+    home.setWallet(res.wallet);
     if (res.event) setEvent({ state: 'start', ...res.event });
     $('chat-log').replaceChildren();
     for (const m of res.chat || []) addChat(m);
@@ -242,6 +264,14 @@ function action(type) {
 }
 
 socket.on('hud', (h) => {
+  const prev = lastHud;
+  lastHud = h;
+  $('hud-coins').textContent = h.coins;
+  if (prev && h.coins > prev.coins) { const el = $('hud-coins').parentElement; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = 'pop 0.4s ease'; }
+  home.setCoins(h.coins);
+  games.updateRace(h);
+  if (currentTab === 'games' && (!prev || prev.cats !== h.cats || prev.friends !== h.friends || prev.catHint !== h.catHint || !!prev.race !== !!h.race)) games.renderGames();
+  if (h.race && h.race.state !== 'lobby' && currentTab !== 'pad') showTab('pad');
   $('hud-score').textContent = h.score;
   $('hud-friends').textContent = h.friends;
   $('hud-cats').textContent = `${h.cats}/${h.catsTotal}`;
@@ -255,7 +285,7 @@ socket.on('hud', (h) => {
 socket.on('toast', ({ text }) => toast(text));
 socket.on('landmark', (l) => {
   buzz(30);
-  modal(`📍 ${l.name}`, `${l.fact}${l.first ? `\n\n🎟️ New passport stamp! (${l.stamps}/${l.total}) +25` : ''}`);
+  modal(`📍 ${l.name}`, `${l.fact}${l.first ? `\n\n🎟️ New passport stamp! (${l.stamps}/${l.total}) +🪙10` : ''}`);
 });
 
 function setEvent(e) {
@@ -268,7 +298,7 @@ function setEvent(e) {
     el.classList.add('hidden');
     const r = e.ranking || [];
     const mine = r.findIndex((x) => x.id === state.me?.id);
-    toast(mine === 0 ? `🏆 You won the ${e.title}! +50` : r[0] ? `🏆 ${r[0].name} won the ${e.title}` : `${e.title} is over`, 4000);
+    toast(mine === 0 ? `🏆 You won the ${e.title}! +🪙30` : r[0] ? `🏆 ${r[0].name} won the ${e.title}` : `${e.title} is over`, 4000);
   }
 }
 socket.on('event', setEvent);

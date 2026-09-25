@@ -38,6 +38,32 @@ The phones and the display computer must be on the same Wi-Fi network. The QR co
 | **Interactions and mini-games.** Collect kolo mee, kek lapis and laksa. **Cat Hunt**: find 8 hidden cats. **Passport**: visit 11 landmarks. **High-fives** that make friends. Sampan rides. A hawker stall. Dance on the stage for points. Timed rounds (**Kolo Mee Rush** and **Waterfront Dance-Off**) with winners. Abilities: Dash, Super Jump (you can leap over the river), Food Magnet, Boombox party, Friend Aura. | `server/game/Room.js` |
 | **Host controls** (bottom-right of the display) | add/remove AI bots, start a round, mute, fullscreen |
 
+## Homes, coins and games
+
+Every player gets a **home plot in Taman Lukis**, the housing estate south of the old town. The phone has four tabs:
+
+| Tab | What it does |
+|---|---|
+| 🎮 **Play** | Joystick and buttons (A / B / ability / emotes). |
+| 🏠 **Home** | Place furniture inside the house and decorations in the garden, rotate or remove them, pick a house style and wall/roof colours. Changes appear on the big screen instantly. **🚶 Go home** teleports you to your plot. When someone walks inside a house, its roof lifts off so everyone can see the rooms. |
+| 🛒 **Shop** | 30 items (sofa, TV, pua kumbu rug, sape, piano, aquarium, rambutan tree, fish pond, swing, wau kite, hornbill statue, cat statue…) and 3 extra houses (shophouse, modern bungalow, Iban longhouse). The kampung house is free. |
+| 🏁 **Games** | Every way to earn coins, with progress. |
+
+**Earning coins 🪙** (starting balance: 60)
+
+| Game | Reward |
+|---|---|
+| 🏎️ **Road Race**: 2 laps around Main Bazaar in go-karts, with checkpoint arches | 1st 70 · 2nd 50 · 3rd 35 · finish 10 |
+| 🚣 **Sampan Race**: tap A fast to paddle down the Sarawak River and under the bridge | same prizes |
+| 🍜 **Top Spot Food Quiz**: guess 5 Sarawak dishes from a clue (kolo mee, manok pansuh, midin, umai, kueh chap, teh C peng special…) | 5 each, +30 for 5/5 |
+| 🐱 **Cat Hunt**: find the 8 hidden cats, with a hot/cold hint on the phone | 20 each, +100 for all 8 |
+| 🙌 **Make friends**: high-five someone new | +15 each (+2 for repeat high-fives, once every 20 s) |
+| 📍 Landmark passport stamps · 🍰 snacks · 💃 dancing on stage · city-wide rounds | 10 · 2–5 · a trickle · 30 to the winner |
+
+Races start with a 15-second lobby: join from the Games tab or at the 🏁 / 🚣 signs in town. Bots join too, so you can race on your own. The server validates every purchase, home layout and quiz answer.
+
+**Saving:** coins, items, homes, cats and stamps are saved per phone (a random token kept in the phone's browser) to `data/save.json`, so progress is still there next session. Set `DATA_FILE` to change the location.
+
 ## Architecture
 
 ```
@@ -45,12 +71,16 @@ shared/            ES modules used by BOTH server and browser
   constants.js     tuning, abilities, collectibles
   map.js           deterministic Kuching map (tiles, landmarks, collision, interactables)
   extract.js       drawing → sprite pipeline (pure, unit-tested)
+  catalog.js       shop items, house styles, home-layout validation
 server/
   index.js         Express (static + /api/character + /api/qr + /api/info) + Socket.IO
   net.js           transport: validates messages, fans room events to displays/phones
   rooms.js         RoomManager: room codes, fixed-step clock, GC of idle rooms
   game/Room.js     authoritative simulation (network-agnostic EventEmitter)
-  game/Bot.js      NPC doodles that use the same input API as phones
+  game/Bot.js      NPC doodles that use the same input API as phones (they race too)
+  game/Race.js     go-kart + sampan races (lobby → countdown → race → prizes)
+  game/foodQuiz.js Top Spot dish quiz
+  store.js         saved player progress (JSON file keyed by phone token)
   ai/              Claude character designer + offline rule engine + profile validation
 public/
   display.html     projector client; js/display/main.js = networking + HUD,
@@ -74,6 +104,7 @@ How the design leaves room to grow:
 | `ANTHROPIC_API_KEY` | — | enables Claude character design (otherwise offline rules) |
 | `CLAUDE_MODEL` | `claude-opus-5` | model used for character design |
 | `HTTPS_KEY`, `HTTPS_CERT` | — | serve over HTTPS (paths to PEM files) |
+| `DATA_FILE` | `data/save.json` | where player progress (coins, homes) is saved |
 
 The camera button uses the phone's native camera through `<input capture>`, so it works over plain HTTP on a LAN. There's no need for HTTPS unless you later add a live in-page camera preview.
 
@@ -81,5 +112,5 @@ The camera button uses the phone's native camera through `<input capture>`, so i
 
 ```bash
 npm run dev    # restart on changes
-npm test       # 21 tests: extraction, AI rules, simulation, socket end-to-end
+npm test       # 31 tests: extraction, AI rules, simulation, economy/homes/races/quiz, socket end-to-end
 ```

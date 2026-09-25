@@ -1,7 +1,12 @@
 // Simple autonomous "NPC doodle" used to demo the world and to load-test multiplayer.
 // Bots drive the same input API as phones, so they exercise the real simulation.
 
-import { MAP_W, MAP_H, isWalkableTile, tileCenter } from '../../shared/map.js';
+import { MAP_W, MAP_H, isWalkableTile, tileCenter, riverTop, RIVER_HEIGHT } from '../../shared/map.js';
+import { TILE } from '../../shared/constants.js';
+
+// Road-following route for the kart race (tile units): corners between the checkpoints.
+const KART_ROUTE = [[34, 27], [52.8, 27], [52.8, 32], [52.8, 38.5], [32, 38.5], [12.8, 38.5], [12.8, 32], [12.8, 27], [17, 27]]
+  .map(([x, y]) => ({ x: x * TILE, y: y * TILE }));
 
 export class Bot {
   constructor(player, room) {
@@ -32,8 +37,32 @@ export class Bot {
     return null;
   }
 
+  race(dt) {
+    const { p, room } = this;
+    const race = p.game;
+    if (race.state !== 'running' || !p.vehicle) return room.handleInput(p.id, { mx: 0, my: 0 });
+    if (p.vehicle === 'boat') {
+      // paddle 3–5 times a second and steer along the middle of the river
+      this.paddleIn = (this.paddleIn ?? 0) - dt;
+      if (this.paddleIn <= 0) { room.handleAction(p.id, { type: 'interact' }); this.paddleIn = 0.2 + room.rand() * 0.15; }
+      const aheadX = Math.min(MAP_W - 1, Math.floor(p.x / TILE) + 3);
+      const ty = (riverTop(aheadX) + RIVER_HEIGHT / 2) * TILE;
+      const dx = 120, dy = ty - p.y;
+      const d = Math.hypot(dx, dy);
+      return room.handleInput(p.id, { mx: dx / d, my: dy / d });
+    }
+    this.routeIdx ??= 0;
+    const wp = KART_ROUTE[this.routeIdx % KART_ROUTE.length];
+    const dx = wp.x - p.x, dy = wp.y - p.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 60) this.routeIdx++;
+    room.handleInput(p.id, { mx: dx / d, my: dy / d });
+  }
+
   update(dt) {
     const { p, room } = this;
+    if (p.game) { this.race(dt); return; }
+    this.routeIdx = 0;
     this.thinkIn -= dt;
     if (!this.target || this.thinkIn <= 0) {
       this.target = this.pickTarget();

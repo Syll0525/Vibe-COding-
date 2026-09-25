@@ -89,3 +89,14 @@ html, body { overflow: hidden; background: #2f7d3b; }
 .ov-bubble::after { content: ''; position: absolute; left: 50%; bottom: -9px; margin-left: -7px; border: 7px solid transparent; border-top-color: #2b2340; border-bottom: 0; }
 .ov-label { color: #fff; background: rgba(27,27,47,.72); font-weight: 700; font-size: 14px; padding: 1px 10px; border-radius: 999px; white-space: nowrap; }
 .ov-text { font-weight: 800; font-size: 26px; color: #ffe066; -webkit-text-stroke: 1.5px #2b2340; paint-order: stroke fill; white-space: nowrap; }
+
+#race-panel { top: 16px; left: 50%; transform: translateX(-50%); min-width: 320px; max-width: 520px; }
+#event:not(.hidden) ~ #race-panel { top: 120px; }
+#race-panel h3 { margin: 0 0 4px; text-align: center; }
+#race-panel .race { margin-bottom: 6px; }
+#race-panel ol { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 14px; }
+#race-panel li { font-weight: 700; display: flex; gap: 6px; align-items: center; }
+#race-panel li .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #1b1b2f; }
+#bigcount { position: fixed; inset: 0; display: grid; place-items: center; font-size: 12rem; font-weight: 800; color: #ffb400;
+  -webkit-text-stroke: 6px #1b1b2f; paint-order: stroke fill; pointer-events: none; animation: pop 0.4s ease; }
+.ov-home { font-size: 13px; }

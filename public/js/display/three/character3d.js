@@ -10,6 +10,21 @@ import { shadowTexture } from './textures.js';
 import { buildSampan } from './buildings.js';
 
 export const CHAR_H = 62;
+
+function buildKart(color) {
+  const g = new THREE.Group();
+  const add = (geom, m, x, y, z) => { const o = new THREE.Mesh(geom, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  const paint = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.3 });
+  add(new THREE.BoxGeometry(34, 8, 52), paint, 0, 8, 0);
+  add(new THREE.BoxGeometry(30, 4, 12), paint, 0, 12, 24);
+  add(new THREE.BoxGeometry(36, 3, 6), new THREE.MeshStandardMaterial({ color: '#222' }), 0, 18, -24);
+  const tire = new THREE.MeshStandardMaterial({ color: '#1e1e24' });
+  for (const [x, z] of [[-19, -16], [19, -16], [-19, 17], [19, 17]]) {
+    const w = add(new THREE.CylinderGeometry(7, 7, 6, 12), tire, x, 7, z);
+    w.rotation.z = Math.PI / 2;
+  }
+  return g;
+}
 const hash = (s) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h) || 1; };
 const tmp = new THREE.Vector3();
 
@@ -140,7 +155,7 @@ export class Character3D {
       sy = 1 + Math.sin(t * 2.4) * 0.025;
     }
     if (gait === 'glide') lift = 10 + Math.sin(t * 2.2) * 4;
-    const z = (s.z || 0) + bob + lift + (anim === 'ride' ? 10 : 0);
+    const z = (s.z || 0) + bob + lift + (anim === 'ride' || s.veh === 'boat' ? 10 : 0);
 
     this.body.position.y = z;
     this.body.rotation.z = rot;
@@ -150,11 +165,25 @@ export class Character3D {
     const sh = Math.max(0.35, 1 - z / 140);
     this.shadow.scale.set(sh, sh, 1);
 
-    // sampan while riding
-    if (anim === 'ride') {
+    // go-kart for the road race
+    if (s.veh === 'kart') {
+      if (!this.kart) { this.kart = buildKart(this.color); this.group.add(this.kart); }
+      this.kart.visible = true;
+      tmp.setFromMatrixPosition(cam.matrixWorld);
+      if (this.last2) {
+        const vx = s.x - this.last2.x, vz = s.y - this.last2.y;
+        if (Math.hypot(vx, vz) > 0.5) this.kartYaw = Math.atan2(vx, vz);
+      }
+      this.last2 = { x: s.x, y: s.y };
+      this.kart.rotation.y = this.kartYaw ?? 0;
+      this.body.position.y += 12;
+    } else if (this.kart) this.kart.visible = false;
+
+    // sampan while riding or racing on the river
+    if (anim === 'ride' || s.veh === 'boat') {
       if (!this.boat) { this.boat = buildSampan('#a0522d'); this.group.add(this.boat); }
       this.boat.visible = true;
-      this.boat.rotation.y = Math.PI / 2;
+      this.boat.rotation.y = s.veh === 'boat' ? 0 : Math.PI / 2;
       this.boat.position.y = Math.sin(t * 3) * 1.5;
     } else if (this.boat) this.boat.visible = false;
 

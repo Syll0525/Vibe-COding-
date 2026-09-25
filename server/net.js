@@ -101,12 +101,41 @@ export function attachNetwork(io, rooms) {
       socket.join(`p:${r.code}`);
       p.hud = '';
       reply(ack, { ok: true, id: p.id, color: p.color, name: p.name, profile: p.profile,
-        chat: r.chatLog.slice(-20), event: r.publicEvent() });
+        chat: r.chatLog.slice(-20), event: r.publicEvent(), wallet: r.wallet(p) });
     });
 
     const mine = () => (role === 'player' && room && room.players.has(playerId) ? room : null);
 
     socket.on('input', (msg) => { mine()?.handleInput(playerId, msg); });
+
+    // homes + shop
+    socket.on('home:get', (_, ack) => {
+      const r = mine();
+      reply(ack, r ? { ok: true, ...r.wallet(r.players.get(playerId)) } : { ok: false, error: 'Not in the game' });
+    });
+    socket.on('shop:buy', ({ item } = {}, ack) => {
+      const r = mine();
+      reply(ack, r ? r.buy(playerId, String(item ?? '')) : { ok: false, error: 'Not in the game' });
+    });
+    socket.on('home:save', ({ home } = {}, ack) => {
+      const r = mine();
+      reply(ack, r ? r.setHome(playerId, home) : { ok: false, error: 'Not in the game' });
+    });
+    socket.on('home:go', (_, ack) => { reply(ack, { ok: Boolean(mine()?.goHome(playerId)) }); });
+
+    // mini-games
+    socket.on('game:join', ({ kind } = {}, ack) => {
+      const r = mine();
+      reply(ack, r ? r.joinRace(playerId, kind) : { ok: false, error: 'Not in the game' });
+    });
+    socket.on('quiz:start', (_, ack) => {
+      const r = mine();
+      reply(ack, r ? r.startQuiz(playerId) : { ok: false, error: 'Not in the game' });
+    });
+    socket.on('quiz:answer', ({ choice } = {}, ack) => {
+      const r = mine();
+      reply(ack, r ? r.answerQuiz(playerId, choice) : { ok: false, error: 'Not in the game' });
+    });
     socket.on('action', (msg) => { mine()?.handleAction(playerId, msg); });
     socket.on('chat', ({ text } = {}) => { mine()?.handleChat(playerId, text); });
 

@@ -34,9 +34,9 @@ export const ABILITY_INFO = {
 export const EMOTE_ICONS = { wave: '👋', dance: '💃', heart: '❤️', laugh: '😂' };
 
 export const COLLECTIBLES = {
-  kolomee: { label: 'Kolo Mee',   icon: '🍜', points: 10 },
-  keklapis:{ label: 'Kek Lapis',  icon: '🍰', points: 15 },
-  laksa:   { label: 'Sarawak Laksa', icon: '🥣', points: 20 },
+  kolomee: { label: 'Kolo Mee',   icon: '🍜', points: 10, coins: 2 },
+  keklapis:{ label: 'Kek Lapis',  icon: '🍰', points: 15, coins: 3 },
+  laksa:   { label: 'Sarawak Laksa', icon: '🥣', points: 20, coins: 5 },
 };
 
 export const PLAYER_COLORS = [

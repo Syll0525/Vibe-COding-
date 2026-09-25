@@ -12,7 +12,7 @@
 import { TILE } from './constants.js';
 
 export const MAP_W = 64;
-export const MAP_H = 40;
+export const MAP_H = 54;
 export const WORLD_W = MAP_W * TILE;
 export const WORLD_H = MAP_H * TILE;
 
@@ -86,6 +86,50 @@ export const HIDDEN_CATS = [
   { id: 'cat7', tx: 11, ty: 4 }, { id: 'cat8', tx: 60, ty: 37 },
 ];
 
+/** Taman Lukis housing estate: 16 player home plots south of the old town (tile units).
+ *  Row A plots (y 40–44) face south onto Jalan Taman, row B plots (y 47–51) face north. */
+export const PLOT_W = 6, PLOT_H = 5;
+export const PLOTS = [];
+for (const [row, y, facing] of [[0, 40, 'S'], [1, 47, 'N']]) {
+  for (let i = 0; i < 8; i++) PLOTS.push({ id: row * 8 + i, x: 3 + i * 7, y, w: PLOT_W, h: PLOT_H, facing });
+}
+
+/** Convert a canonical home cell (house at rows 0–2) to world tile coords for a plot. */
+export function plotCell(plot, c, r) {
+  return plot.facing === 'S' ? { tx: plot.x + c, ty: plot.y + r } : { tx: plot.x + c, ty: plot.y + (PLOT_H - 1 - r) };
+}
+/** The plot's gate (front middle, on the road side) in world coordinates. */
+export function plotGate(plot) {
+  const tx = plot.x + PLOT_W / 2;
+  return plot.facing === 'S' ? { x: tx * TILE, y: (plot.y + PLOT_H - 0.4) * TILE } : { x: tx * TILE, y: (plot.y + 0.4) * TILE };
+}
+export function plotAt(wx, wy) {
+  const tx = wx / TILE, ty = wy / TILE;
+  return PLOTS.find((p) => tx >= p.x && tx < p.x + p.w && ty >= p.y && ty < p.y + p.h) || null;
+}
+
+/** Race tracks (tile units). Checkpoints are passed in order; the last one is the finish line. */
+const riverMid = (x) => riverTop(x) + RIVER_HEIGHT / 2;
+export const TRACKS = {
+  kart: {
+    name: 'Main Bazaar Grand Prix', laps: 2, radius: 100,
+    checkpoints: [{ x: 34, y: 27 }, { x: 52.8, y: 32 }, { x: 32, y: 38.5 }, { x: 12.8, y: 32 }, { x: 17, y: 27 }],
+    grid: [[15.5, 26.5], [15.5, 27.5], [14, 26.5], [14, 27.5], [12.5, 26.5], [12.5, 27.5], [11, 26.5], [11, 27.5],
+      [9.5, 26.5], [9.5, 27.5], [8, 26.5], [8, 27.5], [6.5, 26.5], [6.5, 27.5], [5, 26.5], [5, 27.5]],
+    sign: { x: 16.5, y: 25.3 },
+  },
+  boat: {
+    name: 'Sarawak River Sampan Race', laps: 1, radius: 110,
+    checkpoints: [{ x: 16, y: riverMid(16) }, { x: 31.5, y: riverMid(31) }, { x: 46, y: riverMid(46) }, { x: 61, y: riverMid(61) }],
+    // 16 starting spots in the three middle lanes of the river, staggered upstream
+    grid: Array.from({ length: 16 }, (_, k) => {
+      const x = 7.4 - Math.floor(k / 3) * 1.2;
+      return [x, riverTop(Math.floor(x)) + 1.5 + (k % 3)];
+    }),
+    sign: { x: 5.5, y: 21.3 },
+  },
+};
+
 function inRect(x, y, r) { return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h; }
 
 function hline(g, y, x0, x1, v) { for (let x = x0; x <= x1; x++) g[y * MAP_W + x] = v; }
@@ -112,6 +156,11 @@ function buildTiles() {
   hline(g, 38, 1, 62, T.ROAD);
   for (const x of [12, 13, 40, 41, 52, 53]) vline(g, x, 23, 38, T.ROAD);
   for (const x of BRIDGE_COLS) vline(g, x, 21, 38, T.ROAD);
+
+  // Taman Lukis housing estate
+  hline(g, 45, 1, 62, T.ROAD); hline(g, 46, 1, 62, T.ROAD);      // Jalan Taman
+  vline(g, 30, 39, 44, T.ROAD); vline(g, 60, 39, 44, T.ROAD);      // links to the town
+  for (const p of PLOTS) fill(g, p, T.GRASS);
 
   // River, muddy north bank, waterfront boardwalk on the south bank
   for (let x = 0; x < MAP_W; x++) {
@@ -152,7 +201,9 @@ function buildSolids() {
 function buildDecor(tiles, solids) {
   const rand = mulberry32(1839); // Kuching founded as Brooke's capital around 1839–41
   const trees = [];
-  const occupied = (x, y) => solids.some((s) => inRect(x, y, { x: s.x - 1, y: s.y - 1, w: s.w + 2, h: s.h + 2 }));
+  const occupied = (x, y) => solids.some((s) => inRect(x, y, { x: s.x - 1, y: s.y - 1, w: s.w + 2, h: s.h + 2 }))
+    || PLOTS.some((p) => inRect(x, y, { x: p.x - 1, y: p.y - 1, w: p.w + 2, h: p.h + 2 }))
+    || Object.values(TRACKS).some((t) => Math.abs(x + 0.5 - t.sign.x) < 2 && Math.abs(y + 0.5 - t.sign.y) < 2);
   for (let y = 1; y < MAP_H - 1; y++) {
     for (let x = 1; x < MAP_W - 1; x++) {
       const t = tiles[y * MAP_W + x];
@@ -219,6 +270,8 @@ export function buildInteractables() {
     const c = tileCenter(j.tx, j.ty);
     list.push({ id: j.id, type: 'sampan', name: 'Sampan boat', pair: j.pair, x: c.x, y: c.y, radius: 60 });
   }
+  list.push({ id: 'game-kart', type: 'game', game: 'kart', name: 'Road Race', x: TRACKS.kart.sign.x * TILE, y: TRACKS.kart.sign.y * TILE, radius: 70 });
+  list.push({ id: 'game-boat', type: 'game', game: 'boat', name: 'Sampan Race', x: TRACKS.boat.sign.x * TILE, y: TRACKS.boat.sign.y * TILE, radius: 70 });
   const stage = ZONES.find((z) => z.id === 'stage');
   list.push({ id: 'stage', type: 'stage', name: stage.name,
     x: (stage.x + stage.w / 2) * TILE, y: (stage.y + stage.h / 2) * TILE, radius: stage.w * TILE * 0.5 });

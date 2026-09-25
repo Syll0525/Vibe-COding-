@@ -1,7 +1,8 @@
 // Classic top-down 2D canvas renderer (used with /display?view=2d — handy on slow machines).
 
 import { COLLECTIBLES } from '/shared/constants.js';
-import { WORLD_W, WORLD_H } from '/shared/map.js';
+import { WORLD_W, WORLD_H, PLOTS, PLOT_W, PLOT_H, TRACKS, plotCell } from '/shared/map.js';
+import { ITEMS, HOUSE_STYLES, HOUSE_ROWS } from '/shared/catalog.js';
 import { buildGround, buildProps, drawWater, LABELS, CAT_SPOTS } from './world.js';
 import { CharacterView } from './characters.js';
 import { Effects } from './fx.js';
@@ -13,6 +14,8 @@ export class Renderer2D {
     this.ground = buildGround();
     this.props = buildProps();
     this.views = new Map();
+    this.homes = new Map();     // plot -> public home
+    this.races = [];
     this.fx = new Effects();
     this.cam = { x: WORLD_W / 2, y: WORLD_H / 2, zoom: 0.4 };
     this.view = null;
@@ -33,6 +36,58 @@ export class Renderer2D {
   burst(x, y, h, opts) { this.fx.burst(x, y - h, opts); }
   text(x, y, h, str, color) { this.fx.text(x, y - h, str, color); }
   cycleCamera() { return null; }
+  setHome(h) { if (h.owner) this.homes.set(h.plot, h); else this.homes.delete(h.plot); }
+  clearHomes() { this.homes.clear(); }
+  setRaces(races) { this.races = races; }
+
+  drawHomes(ctx, states) {
+    const T = 40;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const plot of PLOTS) {
+      const x = plot.x * T, y = plot.y * T;
+      ctx.strokeStyle = '#e8d9b5'; ctx.lineWidth = 4; ctx.setLineDash([6, 6]);
+      ctx.strokeRect(x + 3, y + 3, PLOT_W * T - 6, PLOT_H * T - 6);
+      ctx.setLineDash([]);
+      const h = this.homes.get(plot.id);
+      if (!h) { ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillText('FREE PLOT', x + PLOT_W * T / 2, y + PLOT_H * T / 2); continue; }
+      const inside = states.some((s) => s.x > x && s.x < x + PLOT_W * T && s.y > y && s.y < y + PLOT_H * T);
+      const houseY = plot.facing === 'S' ? y : y + (PLOT_H - HOUSE_ROWS) * T;
+      ctx.fillStyle = '#e0c29a'; ctx.fillRect(x + 6, houseY + 4, PLOT_W * T - 12, HOUSE_ROWS * T - 8);
+      ctx.strokeStyle = h.home.wall; ctx.lineWidth = 8; ctx.strokeRect(x + 6, houseY + 4, PLOT_W * T - 12, HOUSE_ROWS * T - 8);
+      for (const it of h.home.items) {
+        const cell = plotCell(plot, it.c, it.r);
+        ctx.font = '26px serif'; ctx.fillStyle = '#000';
+        ctx.fillText(ITEMS[it.id].icon, (cell.tx + 0.5) * T, (cell.ty + 0.5) * T);
+      }
+      if (!inside) { // roof covers the inside until someone walks in
+        ctx.fillStyle = h.home.roof; ctx.globalAlpha = 0.92;
+        ctx.fillRect(x + 2, houseY, PLOT_W * T - 4, HOUSE_ROWS * T);
+        ctx.globalAlpha = 1;
+        ctx.font = '34px serif'; ctx.fillStyle = '#000';
+        ctx.fillText(HOUSE_STYLES[h.home.style].icon, x + PLOT_W * T / 2, houseY + HOUSE_ROWS * T / 2);
+      }
+      const gy = plot.facing === 'S' ? y + PLOT_H * T : y;
+      ctx.font = 'bold 15px "Baloo 2", sans-serif';
+      const label = `🏠 ${h.name}`;
+      const w = ctx.measureText(label).width + 14;
+      ctx.fillStyle = h.color; ctx.beginPath(); ctx.roundRect(x + PLOT_W * T / 2 - w / 2, gy - 11, w, 22, 11); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(label, x + PLOT_W * T / 2, gy);
+    }
+  }
+
+  drawRaces(ctx) {
+    for (const race of this.races) {
+      const track = TRACKS[race.kind];
+      track.checkpoints.forEach((cp, i) => {
+        const last = i === track.checkpoints.length - 1;
+        ctx.strokeStyle = last ? '#ffffff' : '#ffb400'; ctx.lineWidth = 6; ctx.setLineDash(last ? [8, 8] : []);
+        ctx.beginPath(); ctx.arc(cp.x * 40, cp.y * 40, track.radius * 0.7, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = 'bold 18px sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(last ? '🏁' : String(i + 1), cp.x * 40, cp.y * 40);
+      });
+    }
+  }
   minimapView() { return this.view && this.view.w < WORLD_W * 0.8 ? this.view : null; }
 
   updateCamera(states, dt) {
@@ -89,6 +144,15 @@ export class Renderer2D {
       ctx.strokeStyle = `rgba(123,97,255,${0.3 + Math.sin(t * 8) * 0.15})`;
       ctx.lineWidth = 6;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.9 + Math.sin(t * 6) * 0.05), 0, Math.PI * 2); ctx.stroke();
+    }
+    this.drawHomes(ctx, states);
+    this.drawRaces(ctx);
+    for (const s of states) {
+      if (!s.veh) continue;
+      const v = this.views.get(s.id);
+      ctx.fillStyle = s.veh === 'kart' ? (v?.color ?? '#ff5a5f') : '#8d5a3b';
+      ctx.strokeStyle = '#2b2340'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.roundRect(s.x - (s.veh === 'kart' ? 26 : 44), s.y - 12, s.veh === 'kart' ? 52 : 88, 22, 10); ctx.fill(); ctx.stroke();
     }
     for (const c of CAT_SPOTS) ctx.drawImage(c.art.canvas, c.x + c.art.ox, c.y + c.art.oy + Math.sin(t * 2 + c.tx) * 1.5);
 

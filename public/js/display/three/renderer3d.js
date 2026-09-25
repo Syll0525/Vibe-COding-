@@ -8,11 +8,12 @@
 
 import * as THREE from 'three';
 import { TILE, COLLECTIBLES } from '/shared/constants.js';
-import { WORLD_W, WORLD_H, LANDMARKS, TILES, T, MAP_W, MAP_H, inZone } from '/shared/map.js';
+import { WORLD_W, WORLD_H, LANDMARKS, TILES, T, MAP_W, MAP_H, inZone, TRACKS } from '/shared/map.js';
+import { Homes3D } from './homes3d.js';
 import { buildCity } from './city.js';
 import { Character3D } from './character3d.js';
 import { mat, box } from './buildings.js';
-import { emojiTexture, dotTexture, shadowTexture } from './textures.js';
+import { emojiTexture, dotTexture, shadowTexture, signTexture, canvasTexture } from './textures.js';
 
 const MODES = ['auto', 'group', 'follow', 'overview'];
 const MODE_LABEL = { auto: 'Auto', group: 'Everyone', follow: 'Chase cam', overview: 'City tour' };
@@ -42,6 +43,9 @@ export class Renderer3D {
       return l;
     });
 
+    this.homes = new Homes3D(this.scene, overlay);
+    this.gates = this.buildGates();
+    this.buildSigns();
     this.chars = new Map();
     this.itemSprites = new Map();
     this.partyRings = [];
@@ -82,6 +86,66 @@ export class Renderer3D {
   addPlayer(info) { this.chars.get(info.id)?.dispose(); this.chars.set(info.id, new Character3D(info, this.scene, this.overlay)); }
   removePlayer(id) { this.chars.get(id)?.dispose(); this.chars.delete(id); }
   say(id, text) { this.chars.get(id)?.say(text); }
+  setHome(h) { this.homes.set(h); }
+  clearHomes() { this.homes.clear(); }
+  setRaces(races) {
+    for (const kind of Object.keys(this.gates)) {
+      const race = races.find((r) => r.kind === kind);
+      this.gates[kind].visible = Boolean(race);
+    }
+  }
+
+  buildGates() {
+    const checker = canvasTexture('checker', 64, 16, (c, w, h) => {
+      for (let x = 0; x < w; x += 8) for (let y = 0; y < h; y += 8) { c.fillStyle = (x + y) % 16 ? '#111' : '#fff'; c.fillRect(x, y, 8, 8); }
+    });
+    const gates = {};
+    for (const [kind, track] of Object.entries(TRACKS)) {
+      const g = new THREE.Group();
+      track.checkpoints.forEach((cp, i) => {
+        const last = i === track.checkpoints.length - 1;
+        const arch = new THREE.Group();
+        const w = kind === 'kart' ? 100 : 190;
+        const pole = mat(last ? '#ffffff' : ['#ff5a5f', '#ffb400', '#1fb5ad', '#7b61ff'][i % 4]);
+        box(arch, 6, 90, 6, pole, -w / 2, 0, 0);
+        box(arch, 6, 90, 6, pole, w / 2, 0, 0);
+        const banner = new THREE.Mesh(new THREE.BoxGeometry(w + 6, 16, 3), last ? new THREE.MeshStandardMaterial({ map: checker }) : new THREE.MeshStandardMaterial({ map: signTexture(`CHECKPOINT ${i + 1}`, '#ffffff', '#2b2340') }));
+        banner.position.y = 90;
+        arch.add(banner);
+        if (kind === 'boat') for (const x of [-w / 2, w / 2]) { const b = new THREE.Mesh(new THREE.SphereGeometry(10, 10, 8), mat('#ff7043')); b.position.set(x, 2, 0); arch.add(b); }
+        // orient the arch across the direction of travel
+        const next = track.checkpoints[(i + 1) % track.checkpoints.length], prev = track.checkpoints[(i - 1 + track.checkpoints.length) % track.checkpoints.length];
+        const dir = new THREE.Vector2(next.x - prev.x, next.y - prev.y);
+        arch.rotation.y = -Math.atan2(dir.y, dir.x) + Math.PI / 2;
+        arch.position.set(cp.x * TILE, kind === 'boat' ? 2 : 0, cp.y * TILE);
+        g.add(arch);
+      });
+      g.visible = false;
+      this.scene.add(g);
+      gates[kind] = g;
+    }
+    return gates;
+  }
+
+  buildSigns() {
+    const signs = [
+      [TRACKS.kart.sign, '🏁 ROAD RACE', '#ffb400'],
+      [TRACKS.boat.sign, '🚣 SAMPAN RACE', '#1fb5ad'],
+      [{ x: 30.5, y: 39.2 }, 'TAMAN LUKIS', '#ff5a5f'],
+    ];
+    for (const [pos, text, color] of signs) {
+      const g = new THREE.Group();
+      box(g, 4, 60, 4, mat('#555'), -34, 0, 0);
+      box(g, 4, 60, 4, mat('#555'), 34, 0, 0);
+      const board = new THREE.Mesh(new THREE.BoxGeometry(84, 24, 3), [mat(color), mat(color), mat(color), mat(color),
+        new THREE.MeshStandardMaterial({ map: signTexture(text, color, '#ffffff') }), new THREE.MeshStandardMaterial({ map: signTexture(text, color, '#ffffff') })]);
+      board.position.y = 60; board.castShadow = true;
+      g.add(board);
+      g.position.set(pos.x * TILE, 0, pos.y * TILE);
+      this.scene.add(g);
+    }
+  }
+
   cycleCamera() {
     this.mode = MODES[(MODES.indexOf(this.mode) + 1) % MODES.length];
     this.followSwitchAt = 0;
@@ -134,6 +198,7 @@ export class Renderer3D {
       { z: 26.5 * TILE, dir: -1 }, { z: 27.5 * TILE, dir: 1 },
       { z: 7.5 * TILE - 9, dir: -1 }, { z: 7.5 * TILE + 9, dir: 1 },
       { z: 38.5 * TILE + 9, dir: 1 },
+      { z: 45.5 * TILE, dir: -1 }, { z: 46.5 * TILE, dir: 1 },
     ];
     const colors = ['#f6c90e', '#6d4c41', '#c0392b', '#ecf0f1', '#2e86de', '#f6c90e', '#27ae60', '#8e44ad'];
     const cars = [];
@@ -264,6 +329,8 @@ export class Renderer3D {
       l.position.x = 23.5 * TILE + Math.sin(t * 2 + i * 2) * 110;
       l.position.z = 24 * TILE + Math.cos(t * 1.6 + i) * 40;
     });
+
+    this.homes.update(states, (x, y, z) => this.project(x, y, z), t, dt);
 
     // characters
     const seen = new Set();

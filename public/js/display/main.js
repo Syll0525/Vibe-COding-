@@ -68,6 +68,8 @@ async function init(state) {
   $('qr').src = `/api/qr?text=${encodeURIComponent(url)}`;
 
   renderer.clearPlayers();
+  renderer.clearHomes();
+  for (const h of state.homes || []) renderer.setHome(h);
   names.clear();
   for (const p of state.players) addPlayer(p);
   snaps = [];
@@ -102,7 +104,54 @@ function onSnap(s) {
   if (s.board) renderBoard(s.board);
   if (s.parties) parties = s.parties;
   if (s.event !== undefined) updateEventTimer(s.event);
+  if (s.races) { renderer.setRaces(s.races); renderRaces(s.races); }
 }
+
+socket.on('home', (h) => renderer.setHome(h));
+
+function renderRaces(races) {
+  const panel = $('race-panel');
+  panel.classList.toggle('hidden', !races.length);
+  panel.replaceChildren(...races.map((r) => {
+    const box = document.createElement('div');
+    box.className = 'race';
+    const h = document.createElement('h3');
+    h.textContent = r.state === 'lobby' ? `${r.title} — starting in ${r.secs}s! Join on your phone 🏁`
+      : r.state === 'countdown' ? `${r.title} — get ready!` : `${r.title} — ${r.secs}s left`;
+    const ol = document.createElement('ol');
+    for (const x of r.ranking.slice(0, 8)) {
+      const li = document.createElement('li');
+      const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = x.color;
+      li.append(`${x.finished ? '🏁' : `#${x.pos}`}`, dot, x.name + (r.state === 'running' && r.laps > 1 && !x.finished ? ` (lap ${x.lap})` : ''));
+      ol.append(li);
+    }
+    box.append(h, ol);
+    return box;
+  }));
+}
+
+function bigCount(text, ms = 850) {
+  const el = $('bigcount');
+  el.textContent = text;
+  el.classList.remove('hidden');
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  clearTimeout(bigCount.t);
+  bigCount.t = setTimeout(() => el.classList.add('hidden'), ms);
+}
+
+socket.on('race', (r) => {
+  if (r.state === 'lobby') { toast(`${r.title} starts in ${r.secs}s — join from the 🏁 Games tab on your phone!`); sfx.fanfare(); }
+  if (r.state === 'countdown') for (let i = 0; i < r.secs; i++) setTimeout(() => { bigCount(String(r.secs - i)); sfx.jump(); }, i * 1000);
+  if (r.state === 'go') { bigCount('GO!'); sfx.fanfare(); }
+  if (r.state === 'done') {
+    const w = r.ranking?.[0];
+    if (w) {
+      toast(`🏆 ${r.title} winner: ${w.name}!`);
+      const s = latestState(w.id);
+      if (s) renderer.burst(s.x, s.y, 60, { count: 40, icons: ['🏆', '⭐', '🎉'] });
+    }
+  }
+});
 
 socket.on('player:joined', (p) => {
   addPlayer(p);
@@ -148,6 +197,13 @@ socket.on('fx', (e) => {
       renderer.text(e.x, e.y, 50, 'SPLASH!', '#74b9ff'); sfx.splash();
       break;
     case 'sampan': sfx.whoosh(); break;
+    case 'finish':
+      renderer.burst(e.x, e.y, 50, { count: 24, icons: ['🏁', '⭐', '🎉'] });
+      renderer.text(e.x, e.y, 90, `#${e.place}!`, '#ffe066'); sfx.fanfare();
+      break;
+    case 'buy': renderer.burst(e.x, e.y, 60, { count: 10, icons: ['🛍️', '🪙', '✨'], speed: 110 }); sfx.collect(); break;
+    case 'teleport': renderer.burst(e.x, e.y, 30, { count: 14, icons: ['✨', '🏠'], speed: 120 }); sfx.whoosh(); break;
+    case 'quiz': renderer.text(e.x, e.y, 80, '🍜 Food quiz!', '#ffe066'); break;
     case 'landmark': showCard(e); if (e.first) renderer.text(e.x ?? 0, e.y ?? 0, 60, '+25', '#ffe066'); sfx.landmark(); break;
     case 'ability': {
       const info = ABILITY_INFO[e.ability];
@@ -192,7 +248,7 @@ function renderBoard(board) {
     const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = p.color;
     const name = document.createElement('span'); name.className = 'name'; name.textContent = p.name;
     const meta = document.createElement('span'); meta.className = 'meta';
-    meta.textContent = `${p.score} ⭐ ${p.friends}💞 ${p.cats}🐱`;
+    meta.textContent = `${p.coins}🪙 ${p.score}⭐ ${p.friends}💞`;
     li.append(dot, name, meta);
     list.append(li);
   }

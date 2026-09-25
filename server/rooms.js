@@ -8,8 +8,9 @@ const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I/O to avoid confusion
 const IDLE_ROOM_MS = 10 * 60 * 1000;
 
 export class RoomManager {
-  constructor({ onTick } = {}) {
+  constructor({ onTick, store = null } = {}) {
     this.rooms = new Map();
+    this.store = store;
     this.onTick = onTick;
     this.timer = null;
   }
@@ -23,7 +24,7 @@ export class RoomManager {
   }
 
   create() {
-    const room = new Room(this.newCode());
+    const room = new Room(this.newCode(), { store: this.store });
     this.rooms.set(room.code, room);
     return room;
   }
