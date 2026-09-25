@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffb400" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Draw Kuching — Controller</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/play.css" />
+</head>
+<body>
+  <!-- 1. Join -->
+  <section id="s-join" class="screen">
+    <div class="hero">🐱✏️</div>
+    <h1>Draw <span class="red">Kuching</span></h1>
+    <div class="card form">
+      <label>Room code
+        <input id="in-code" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" />
+      </label>
+      <label>Your character's name
+        <input id="in-name" maxlength="16" autocomplete="off" placeholder="e.g. Captain Kolo" />
+      </label>
+      <button class="btn" id="btn-join-next">Next ➜</button>
+      <button class="btn secondary hidden" id="btn-resume"></button>
+      <p class="error" id="join-error"></p>
+    </div>
+  </section>
+
+  <!-- 2. Scan the drawing -->
+  <section id="s-scan" class="screen hidden">
+    <h2>📸 Scan your drawing</h2>
+    <p class="muted">Lay your drawing flat in good light, fill the frame, and snap!</p>
+    <div class="stack">
+      <label class="btn big">📷 Take a photo
+        <input type="file" accept="image/*" capture="environment" id="file-camera" hidden />
+      </label>
+      <label class="btn secondary">🖼️ Choose from gallery
+        <input type="file" accept="image/*" id="file-gallery" hidden />
+      </label>
+      <button class="btn secondary" id="btn-drawpad">✏️ Draw on my phone instead</button>
+      <button class="btn secondary" id="btn-skip-scan">🎲 Skip — give me a random doodle</button>
+    </div>
+  </section>
+
+  <!-- 2b. Draw pad -->
+  <section id="s-draw" class="screen hidden">
+    <h2>✏️ Draw your character</h2>
+    <canvas id="drawpad" width="480" height="480"></canvas>
+    <div class="swatches" id="swatches"></div>
+    <div class="row">
+      <button class="btn secondary" id="btn-draw-clear">🧽 Clear</button>
+      <button class="btn secondary" id="btn-draw-back">↩ Back</button>
+      <button class="btn" id="btn-draw-done">Done ✓</button>
+    </div>
+    <p class="muted small">Tip: draw a closed outline, then colour inside!</p>
+  </section>
+
+  <!-- 3. Extraction preview -->
+  <section id="s-preview" class="screen hidden">
+    <h2>✨ Here's your character</h2>
+    <div class="preview-wrap"><canvas id="preview"></canvas><div id="preview-busy" class="busy hidden">Cutting out…</div></div>
+    <p class="error" id="preview-error"></p>
+    <label class="slider">Line pickup
+      <input type="range" id="sensitivity" min="0" max="1" step="0.05" value="0.5" />
+    </label>
+    <div class="row">
+      <button class="btn secondary" id="btn-retake">↩ Retake</button>
+      <button class="btn" id="btn-preview-ok">Looks good ✓</button>
+    </div>
+  </section>
+
+  <!-- 4. Describe personality -->
+  <section id="s-describe" class="screen hidden">
+    <h2>🧠 Describe your character</h2>
+    <p class="muted">How does it move? What does it love? Our AI turns this into real game behaviour.</p>
+    <textarea id="in-desc" maxlength="300" rows="3" placeholder="e.g. walks like a robot, loves music and likes to make friends"></textarea>
+    <div class="chips" id="chips"></div>
+    <button class="btn big" id="btn-generate">✨ Bring it to life</button>
+  </section>
+
+  <!-- 5. Profile card -->
+  <section id="s-profile" class="screen hidden">
+    <div class="card profile">
+      <div class="profile-top">
+        <img id="pf-img" alt="Your character" />
+        <div>
+          <h2 id="pf-name"></h2>
+          <div id="pf-traits" class="traits"></div>
+        </div>
+      </div>
+      <p id="pf-quote" class="quote"></p>
+      <p id="pf-bio" class="muted"></p>
+      <div id="pf-stats" class="stats"></div>
+      <div id="pf-ability" class="ability"></div>
+      <p id="pf-source" class="muted small"></p>
+    </div>
+    <div class="row">
+      <button class="btn secondary" id="btn-reroll">🔁 Change</button>
+      <button class="btn big" id="btn-enter">🚀 Enter Kuching!</button>
+    </div>
+    <p class="error" id="enter-error"></p>
+  </section>
+
+  <!-- 6. Controller -->
+  <section id="s-play" class="screen hidden">
+    <header id="hud">
+      <span class="pill" id="hud-me"></span>
+      <span class="pill">⭐ <b id="hud-score">0</b></span>
+      <span class="pill">💞 <b id="hud-friends">0</b></span>
+      <span class="pill">🐱 <b id="hud-cats">0</b></span>
+      <span class="pill">📍 <b id="hud-stamps">0</b></span>
+      <button class="pill btn-chat" id="btn-chat">💬<i id="chat-dot" class="dot hidden"></i></button>
+    </header>
+    <div id="event-strip" class="hidden"></div>
+    <div id="hint"></div>
+    <div id="pad">
+      <div id="stick-zone"><div id="stick-base"><div id="stick-knob"></div></div><span class="zone-label">Move</span></div>
+      <div id="buttons">
+        <div class="emotes">
+          <button data-emote="wave">👋</button><button data-emote="dance">💃</button>
+          <button data-emote="heart">❤️</button><button data-emote="laugh">😂</button>
+        </div>
+        <button id="btn-ability" class="round ability-btn"><span id="ability-icon">★</span><i id="ability-cd"></i></button>
+        <button id="btn-jump" class="round jump-btn">B<small>jump</small></button>
+        <button id="btn-a" class="round a-btn">A<small>use</small></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chat drawer -->
+  <aside id="chat" class="hidden">
+    <div class="chat-head"><b>💬 Chat</b><button id="btn-chat-close" class="btn secondary small">✕</button></div>
+    <div id="chat-log"></div>
+    <div class="quick" id="quick"></div>
+    <form id="chat-form">
+      <input id="chat-input" maxlength="140" placeholder="Say something nice…" autocomplete="off" />
+      <button class="btn teal">Send</button>
+    </form>
+  </aside>
+
+  <div id="modal" class="hidden"><div class="card"><h3 id="modal-title"></h3><p id="modal-text"></p><button class="btn" id="modal-ok">OK</button></div></div>
+  <div id="toast" class="hidden"></div>
+  <div id="busy" class="hidden"><div class="card"><div class="spinner">🐱</div><p id="busy-text">Thinking…</p></div></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/js/play/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Draw Kuching — Big Screen</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📽️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/display.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <section id="join" class="panel">
+    <div class="brand">Draw <b>Kuching</b></div>
+    <img id="qr" alt="QR code to join" />
+    <div class="code-label">Scan or go to</div>
+    <div id="join-url" class="url"></div>
+    <div class="code-label">Room code</div>
+    <div id="room-code" class="code">····</div>
+  </section>
+
+  <section id="board" class="panel">
+    <h3>🏆 Explorers</h3>
+    <ol id="board-list"></ol>
+    <div id="empty-hint" class="muted">Waiting for players… scan the QR code!</div>
+  </section>
+
+  <div id="event" class="hidden">
+    <div id="event-title"></div>
+    <div id="event-text"></div>
+    <div class="bar"><div id="event-bar"></div></div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <section id="chat" class="panel">
+    <div id="chat-log"></div>
+  </section>
+
+  <div id="card" class="hidden">
+    <div id="card-who"></div>
+    <h2 id="card-title"></h2>
+    <p id="card-fact"></p>
+  </div>
+
+  <canvas id="minimap" width="256" height="160"></canvas>
+
+  <nav id="host">
+    <button class="btn secondary small" id="bot-add" title="Add an AI doodle to wander around">＋ Bot</button>
+    <button class="btn secondary small" id="bot-clear" title="Remove all bots">✕ Bots</button>
+    <button class="btn secondary small" id="event-start" title="Start a mini-game round now">🎉 Round</button>
+    <button class="btn secondary small" id="mute" title="Sound on/off">🔊</button>
+    <button class="btn secondary small" id="fullscreen" title="Fullscreen">⛶</button>
+  </nav>
+
+  <div id="start">
+    <div class="card">
+      <div style="font-size:3rem">🐱🌉🍜</div>
+      <h1>Draw Kuching</h1>
+      <p>Put this screen on the projector, then click to start.</p>
+      <button class="btn" id="start-btn">▶ Start the city</button>
+      <p class="muted small-text" id="conn-status">Connecting…</p>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/js/display/main.js"></script>
+</body>
+</html>

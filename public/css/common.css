@@ -1,0 +1,62 @@
+:root {
+  --ink: #1b1b2f;
+  --paper: #fffaf0;
+  --muted: #6b6b80;
+  --accent: #ff5a5f;
+  --accent-2: #1fb5ad;
+  --gold: #ffb400;
+  --card: #ffffff;
+  --line: #e7e1d3;
+  --shadow: 0 6px 0 rgba(27, 27, 47, 0.15);
+  --radius: 18px;
+  --font: "Baloo 2", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #f6f3ea;
+    --paper: #17172a;
+    --muted: #a8a8c0;
+    --card: #23233a;
+    --line: #34344f;
+    --shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+.btn {
+  border: 3px solid var(--ink);
+  background: var(--gold);
+  color: #1b1b2f;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease;
+}
+.btn:active { transform: translateY(3px); box-shadow: none; }
+.btn.secondary { background: var(--card); color: var(--ink); }
+.btn.teal { background: var(--accent-2); color: #fff; }
+.btn.red { background: var(--accent); color: #fff; }
+.btn:disabled { opacity: 0.5; }
+
+.card {
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.hidden { display: none !important; }

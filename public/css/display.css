@@ -1,0 +1,77 @@
+html, body { overflow: hidden; background: #2f7d3b; }
+#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+.panel {
+  position: fixed;
+  background: rgba(255, 250, 240, 0.94);
+  color: #1b1b2f;
+  border: 3px solid #1b1b2f;
+  border-radius: 18px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+  padding: 12px 14px;
+}
+.muted { color: #6b6b80; }
+.small-text { font-size: 0.9rem; }
+
+#join { top: 16px; left: 16px; width: 220px; text-align: center; transition: transform 0.4s ease, opacity 0.4s; }
+#join.compact { transform: scale(0.62); transform-origin: top left; opacity: 0.92; }
+#join .brand { font-size: 1.5rem; font-weight: 800; }
+#join .brand b { color: #ff5a5f; }
+#join img { width: 180px; height: 180px; display: block; margin: 6px auto; border-radius: 10px; background: #fff; }
+.code-label { font-size: 0.8rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.08em; }
+.url { font-weight: 700; font-size: 0.85rem; word-break: break-all; margin-bottom: 4px; }
+.code { font-size: 2.6rem; font-weight: 800; letter-spacing: 0.18em; line-height: 1.1; color: #ff5a5f; }
+
+#board { top: 16px; right: 16px; width: 260px; max-height: 60vh; overflow: hidden; }
+#board h3 { margin: 0 0 6px; }
+#board ol { margin: 0; padding: 0; list-style: none; }
+#board li { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; font-weight: 700; }
+#board li .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #1b1b2f; }
+#board li .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#board li .meta { font-size: 0.8rem; color: #6b6b80; font-weight: 600; }
+
+#event {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  background: #ffb400; border: 3px solid #1b1b2f; border-radius: 18px; box-shadow: 0 6px 0 rgba(0,0,0,.25);
+  padding: 10px 26px; text-align: center; min-width: 340px; color: #1b1b2f;
+  animation: pop 0.4s ease;
+}
+#event-title { font-size: 1.8rem; font-weight: 800; }
+#event-text { font-weight: 600; }
+#event .bar { height: 10px; border: 2px solid #1b1b2f; border-radius: 99px; margin-top: 6px; overflow: hidden; background: #fff; }
+#event-bar { height: 100%; background: #ff5a5f; transition: width 1s linear; }
+
+#toasts { position: fixed; top: 130px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast {
+  background: #fff; color: #1b1b2f; border: 3px solid #1b1b2f; border-radius: 999px; padding: 8px 18px;
+  font-weight: 800; font-size: 1.2rem; box-shadow: 0 5px 0 rgba(0,0,0,.2); animation: pop 0.35s ease;
+}
+
+#chat { left: 16px; bottom: 16px; width: 360px; max-height: 34vh; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+#chat:empty, #chat.empty { display: none; }
+#chat-log { display: flex; flex-direction: column; gap: 3px; }
+.msg { font-size: 1rem; line-height: 1.3; animation: pop 0.25s ease; }
+.msg b { margin-right: 6px; }
+
+#card {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); width: min(560px, 90vw);
+  background: #fffaf0; color: #1b1b2f; border: 4px solid #1b1b2f; border-radius: 22px; padding: 14px 22px;
+  box-shadow: 0 8px 0 rgba(0,0,0,.25); animation: pop 0.4s ease;
+}
+#card h2 { margin: 0; }
+#card p { margin: 4px 0 0; font-size: 1.1rem; }
+#card-who { font-weight: 700; color: #6b6b80; }
+
+#minimap { position: fixed; right: 16px; bottom: 76px; border: 3px solid #1b1b2f; border-radius: 12px; background: #2f7d3b; display: none; }
+
+#host { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 6px; opacity: 0.35; transition: opacity 0.2s; }
+#host:hover { opacity: 1; }
+.btn.small { padding: 6px 12px; font-size: 0.9rem; box-shadow: 0 3px 0 rgba(0,0,0,.2); border-width: 2px; }
+
+#start { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(20, 20, 40, 0.55); padding: 16px; }
+#start .card { text-align: center; max-width: 420px; background: #fffaf0; color: #1b1b2f; }
+#start h1 { margin: 0.1em 0; }
+
+@keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+#event, #card { animation-name: popc; }
+@keyframes popc { from { transform: translateX(-50%) scale(0.7); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
