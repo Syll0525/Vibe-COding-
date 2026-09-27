@@ -6,6 +6,14 @@ A multiplayer party game. Players draw a character on paper and scan it with a p
  paper drawing ──📷──► phone: cut-out + AI personality ──► big screen: explore Kuching together
 ```
 
+## Easiest way to try it (no typing)
+
+1. Install **Node.js LTS** from https://nodejs.org.
+2. Download this branch as a ZIP and unzip it.
+3. Double-click **`Start Draw Kuching (Windows).bat`** or **`Start Draw Kuching (Mac).command`**.
+   The first run installs the game files. Then Chrome opens the big screen and a phone-style controller, with the room code already filled in.
+   On a Mac, if it says the file can't be opened, right-click it → **Open** → **Open**.
+
 ## Quick start
 
 ```bash

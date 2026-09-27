@@ -35,6 +35,13 @@ export function createServer({ dataFile = process.env.DATA_FILE ?? path.join(roo
     res.json({ ips, port: PORT, ai: aiEnabled(), https: Boolean(useHttps) });
   });
 
+  // The newest room that has a big screen open — lets /play pre-fill the code
+  app.get('/api/current-room', (_req, res) => {
+    let best = null;
+    for (const r of rooms.rooms.values()) if (r.displayCount > 0 && (!best || r.createdAt > best.createdAt)) best = r;
+    res.json({ code: best?.code ?? null });
+  });
+
   app.get('/api/qr', async (req, res) => {
     const text = String(req.query.text || '').slice(0, 300);
     if (!text) return res.status(400).end();

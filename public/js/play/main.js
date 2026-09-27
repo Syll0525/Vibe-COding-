@@ -36,6 +36,12 @@ const buzz = (ms = 15) => navigator.vibrate?.(ms);
 
 // ------------------------------------------------------------------ 1. join
 $('in-code').value = state.code;
+// No code in the link? Pre-fill the room that is showing on the big screen right now.
+if (!state.code) {
+  fetch('/api/current-room').then((r) => r.json()).then(({ code }) => {
+    if (code && !$('in-code').value) $('in-code').value = code;
+  }).catch(() => {});
+}
 $('in-name').value = localStorage.getItem('dk-name') || '';
 const saved = JSON.parse(sessionStorage.getItem('dk-session') || 'null');
 if (saved && saved.code === state.code && state.code) {
