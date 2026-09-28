@@ -4,9 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Daily Reminders</title>
-  <meta name="theme-color" content="#4f46e5">
+  <meta name="theme-color" content="#d4634f">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,17 +18,21 @@
       <h1>Daily Reminders</h1>
       <p id="today-label" class="muted"></p>
     </div>
-    <button id="notify-btn" class="btn ghost" type="button">Turn on notifications</button>
+    <div class="top-actions">
+      <button id="coin-pill" class="coin-pill" type="button" aria-label="Coins, open your pet">🪙 <span id="coin-count">0</span></button>
+      <button id="notify-btn" class="btn ghost" type="button">Turn on notifications</button>
+    </div>
   </header>
 
   <div id="alerts" class="alerts" aria-live="assertive"></div>
 
-  <nav class="tabs" role="tablist">
-    <button class="tab active" data-tab="tasks" role="tab" type="button">Tasks</button>
-    <button class="tab" data-tab="notes" role="tab" type="button">Daily notes</button>
-  </nav>
-
   <main class="layout">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="tasks" role="tab" type="button">📝 Tasks</button>
+      <button class="tab side-active" data-tab="pet" role="tab" type="button">🐹 Pet</button>
+      <button class="tab" data-tab="notes" role="tab" type="button">📖 Notes</button>
+    </nav>
+
     <section id="panel-tasks" class="panel active" aria-label="Tasks">
       <form id="task-form" class="card add-form">
         <input id="task-title" type="text" placeholder="What do you need to do?" required maxlength="200" autocomplete="off">
@@ -33,6 +40,12 @@
           <label>When
             <input id="task-due" type="datetime-local" required>
           </label>
+          <label>Where <span class="optional">(optional)</span>
+            <input id="task-location" type="text" placeholder="📍 e.g. Gym, Library" maxlength="100" list="past-locations" autocomplete="off">
+            <datalist id="past-locations"></datalist>
+          </label>
+        </div>
+        <div class="row">
           <label>Repeat
             <select id="task-repeat">
               <option value="none">Once</option>
@@ -41,7 +54,7 @@
               <option value="weekly">Every week</option>
             </select>
           </label>
-          <button class="btn primary" type="submit">Add</button>
+          <button class="btn primary" type="submit">Add task</button>
         </div>
       </form>
 
@@ -54,31 +67,69 @@
       <div id="task-groups"></div>
     </section>
 
-    <section id="panel-notes" class="panel" aria-label="Daily notes">
-      <div class="card">
-        <div class="date-nav">
-          <button id="prev-day" class="btn ghost icon" type="button" aria-label="Previous day">‹</button>
-          <input id="note-date" type="date">
-          <button id="next-day" class="btn ghost icon" type="button" aria-label="Next day">›</button>
-          <button id="go-today" class="btn ghost" type="button">Today</button>
+    <div class="side">
+      <section id="panel-pet" class="panel side-active" aria-label="Your pet">
+        <div class="card scene-card">
+          <canvas id="scene" width="160" height="90" aria-label="Your pet's café street. Click to pat."></canvas>
+          <p id="pet-speech" class="speech"></p>
+          <div class="pet-buttons">
+            <button type="button" data-act="feed"><span class="nub"></span>Feed</button>
+            <button type="button" data-act="pat"><span class="nub"></span>Pat</button>
+            <button type="button" data-act="play"><span class="nub"></span>Play</button>
+          </div>
         </div>
 
-        <h3>What I got done</h3>
-        <ul id="done-that-day" class="done-list"></ul>
-
-        <h3>What I learned</h3>
-        <textarea id="note-text" rows="8" placeholder="Write down what you learned today, what went well, and what to try tomorrow…"></textarea>
-        <p id="save-status" class="muted small">&nbsp;</p>
-      </div>
-
-      <div class="card">
-        <div class="history-head">
-          <h3>Past notes</h3>
-          <input id="note-search" type="search" placeholder="Search notes">
+        <div class="card pet-stats">
+          <div class="pet-title">
+            <strong id="pet-name">Hammy</strong>
+            <span id="pet-level" class="muted small"></span>
+          </div>
+          <div class="stat">
+            <span>🍙 Full</span>
+            <div class="bar" role="progressbar" aria-label="Fullness" aria-valuemin="0" aria-valuemax="100"><span id="bar-hunger"></span></div>
+          </div>
+          <div class="stat">
+            <span>💗 Happy</span>
+            <div class="bar happy" role="progressbar" aria-label="Happiness" aria-valuemin="0" aria-valuemax="100"><span id="bar-happy"></span></div>
+          </div>
         </div>
-        <ul id="note-history" class="history"></ul>
-      </div>
-    </section>
+
+        <div class="card">
+          <div class="subtabs">
+            <button class="subtab active" data-view="shop" type="button">🛒 Shop</button>
+            <button class="subtab" data-view="bag" type="button">🎒 Bag</button>
+            <button class="subtab" data-view="style" type="button">🎀 Customize</button>
+          </div>
+          <div id="pet-view"></div>
+        </div>
+      </section>
+
+      <section id="panel-notes" class="panel" aria-label="Daily notes">
+        <div class="card">
+          <div class="date-nav">
+            <button id="prev-day" class="btn ghost icon" type="button" aria-label="Previous day">‹</button>
+            <input id="note-date" type="date">
+            <button id="next-day" class="btn ghost icon" type="button" aria-label="Next day">›</button>
+            <button id="go-today" class="btn ghost" type="button">Today</button>
+          </div>
+
+          <h3>What I got done</h3>
+          <ul id="done-that-day" class="done-list"></ul>
+
+          <h3>What I learned</h3>
+          <textarea id="note-text" rows="8" placeholder="Write down what you learned today, what went well, and what to try tomorrow…"></textarea>
+          <p id="save-status" class="muted small">&nbsp;</p>
+        </div>
+
+        <div class="card">
+          <div class="history-head">
+            <h3>Past notes</h3>
+            <input id="note-search" type="search" placeholder="Search notes">
+          </div>
+          <ul id="note-history" class="history"></ul>
+        </div>
+      </section>
+    </div>
   </main>
 
   <footer class="footer">
@@ -87,6 +138,10 @@
     <p class="muted small">Your data is saved in this browser only. Keep this page open (a background tab is fine) to get reminders.</p>
   </footer>
 
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="pixel.js"></script>
+  <script src="pet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

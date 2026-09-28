@@ -45,9 +45,9 @@ function nextOccurrence(due, repeat) {
 function load() {
   try {
     const data = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (data && Array.isArray(data.tasks) && data.notes) return data;
+    if (data && Array.isArray(data.tasks) && data.notes) return Pet.ensure(data);
   } catch { /* fall through to empty state */ }
-  return { tasks: [], notes: {} };
+  return Pet.ensure({ tasks: [], notes: {} });
 }
 
 let state = load();
@@ -56,11 +56,13 @@ function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
 }
 
+Pet.init({ getState: () => state, save, toast });
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const findTask = (id) => state.tasks.find((t) => t.id === id);
 
-function addTask(title, due, repeat) {
-  state.tasks.push({ id: uid(), title, due, repeat, done: false, doneAt: null, notified: new Date(due) <= new Date() });
+function addTask(title, due, repeat, location) {
+  state.tasks.push({ id: uid(), title, due, repeat, location, done: false, doneAt: null, notified: new Date(due) <= new Date() });
   save();
   render();
 }
@@ -70,10 +72,17 @@ function setDone(id, done) {
   if (!task || task.done === done) return;
   task.done = done;
   task.doneAt = done ? new Date().toISOString() : null;
+  if (done) {
+    const coins = Pet.reward(state, task);
+    toast(`✓ ${task.title}  +${coins} 🪙`);
+    bumpCoins();
+  } else {
+    Pet.takeBack(state, task);
+  }
   if (done && task.repeat !== 'none' && !task.spawned) {
     task.spawned = true;
     state.tasks.push({
-      id: uid(), title: task.title, repeat: task.repeat,
+      id: uid(), title: task.title, repeat: task.repeat, location: task.location,
       due: nextOccurrence(task.due, task.repeat),
       done: false, doneAt: null, notified: false,
     });
@@ -164,7 +173,7 @@ function chime() {
 
 function systemNotify(task) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const body = `It's time! (${fmtTime(new Date(task.due))})`;
+  const body = `It's time! (${fmtTime(new Date(task.due))})` + (task.location ? `\n📍 ${task.location}` : '');
   if (swReg) {
     swReg.showNotification(`⏰ ${task.title}`, {
       body, tag: task.id, requireInteraction: true, icon: 'icon.svg', data: { id: task.id },
@@ -185,7 +194,7 @@ function showAlert(task) {
   el.id = `alert-${task.id}`;
   const msg = document.createElement('span');
   msg.className = 'msg';
-  msg.textContent = `⏰ ${task.title}`;
+  msg.textContent = `⏰ ${task.title}` + (task.location ? ` · 📍 ${task.location}` : '');
   const done = button('✓ Done', 'btn', () => setDone(task.id, true));
   const later = button(`Snooze ${SNOOZE_MINUTES} min`, 'btn', () => snooze(task.id));
   const close = button('✕', 'btn', () => dismissAlert(task.id));
@@ -266,9 +275,26 @@ function taskItem(task, { showDay }) {
   }
   const meta = document.createElement('div');
   meta.className = 'task-meta';
-  meta.textContent = task.done
+  const when = document.createElement('span');
+  when.textContent = task.done
     ? `Done at ${fmtTime(new Date(task.doneAt))}`
     : (showDay ? `${fmtDay(due)}, ` : '') + fmtTime(due);
+  meta.append(when);
+  if (task.location) {
+    const where = document.createElement('a');
+    where.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`;
+    where.target = '_blank';
+    where.rel = 'noopener';
+    where.title = 'Open in maps';
+    where.textContent = `📍 ${task.location}`;
+    meta.append(where);
+  }
+  if (task.done && task.coins) {
+    const coin = document.createElement('span');
+    coin.className = 'badge coin';
+    coin.textContent = `+${task.coins} 🪙`;
+    title.append(coin);
+  }
   body.append(title, meta);
 
   const del = button('✕', 'btn del', () => {
@@ -354,7 +380,7 @@ function renderNotes() {
   }
   done.forEach((t) => {
     const li = document.createElement('li');
-    li.textContent = `${t.title} — ${fmtTime(new Date(t.doneAt))}`;
+    li.textContent = `${t.title}${t.location ? ` @ ${t.location}` : ''} — ${fmtTime(new Date(t.doneAt))}`;
     list.append(li);
   });
 
@@ -416,6 +442,14 @@ function storeNote() {
   const text = $('#note-text').value;
   if (text.trim()) state.notes[noteDay] = text;
   else delete state.notes[noteDay];
+  if (noteDay === todayKey() && text.trim().length >= 10) {
+    const coins = Pet.noteBonus(state, noteDay);
+    if (coins) {
+      toast(`📖 Today's note written  +${coins} 🪙`);
+      bumpCoins();
+      Pet.render();
+    }
+  }
   save();
   $('#save-status').textContent = `Saved ${fmtTime(new Date())}`;
   renderHistory();
@@ -438,9 +472,41 @@ $('#note-search').addEventListener('input', renderHistory);
 
 // ---------- tabs ----------
 
+// Phones show one panel at a time. Wide screens always show Tasks and pick Pet or Notes beside it.
+let sideTab = 'pet';
 function showTab(name) {
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === `panel-${name}`));
+  if (name !== 'tasks') sideTab = name;
+  document.querySelectorAll('.tab').forEach((t) => {
+    t.classList.toggle('active', t.dataset.tab === name);
+    t.classList.toggle('side-active', t.dataset.tab === sideTab);
+  });
+  document.querySelectorAll('.panel').forEach((p) => {
+    p.classList.toggle('active', p.id === `panel-${name}`);
+    p.classList.toggle('side-active', p.id === `panel-${sideTab}`);
+  });
+}
+$('#coin-pill').addEventListener('click', () => {
+  showTab('pet');
+  $('#panel-pet').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// ---------- toasts ----------
+
+function toast(text) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = text;
+  const box = $('#toasts');
+  box.append(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => el.remove(), 2800);
+}
+
+function bumpCoins() {
+  const pill = $('#coin-pill');
+  pill.classList.remove('bump');
+  void pill.offsetWidth;
+  pill.classList.add('bump');
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 
@@ -458,8 +524,9 @@ $('#task-form').addEventListener('submit', (e) => {
   const title = $('#task-title').value.trim();
   const due = $('#task-due').value;
   if (!title || !due) return;
-  addTask(title, due, $('#task-repeat').value);
+  addTask(title, due, $('#task-repeat').value, $('#task-location').value.trim());
   $('#task-title').value = '';
+  $('#task-location').value = '';
   $('#task-due').value = defaultDue();
   $('#task-repeat').value = 'none';
   $('#task-title').focus();
@@ -485,7 +552,7 @@ $('#import-file').addEventListener('change', async (e) => {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data.tasks) || typeof data.notes !== 'object') throw new Error('bad file');
     if (!confirm('Replace your current tasks and notes with this backup?')) return;
-    state = { tasks: data.tasks, notes: data.notes || {} };
+    state = Pet.ensure({ tasks: data.tasks, notes: data.notes || {}, pet: data.pet });
     save();
     render();
   } catch {
@@ -495,10 +562,17 @@ $('#import-file').addEventListener('change', async (e) => {
 
 // ---------- boot ----------
 
+function renderLocations() {
+  const places = [...new Set(state.tasks.map((t) => t.location).filter(Boolean))].slice(-20);
+  $('#past-locations').replaceChildren(...places.map((p) => Object.assign(document.createElement('option'), { value: p })));
+}
+
 function render() {
   $('#today-label').textContent = fmtLongDay(new Date());
   renderTasks();
   renderNotes();
+  renderLocations();
+  Pet.render();
 }
 
 // Another tab changed the data: pick it up.
