@@ -20,7 +20,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #262136;
     --card: #332b44;
     --text: #f6e9d8;
@@ -37,6 +38,25 @@
     --input: #2b2439;
     --shadow: 3px 3px 0 #1a1524;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #262136;
+  --card: #332b44;
+  --text: #f6e9d8;
+  --muted: #b8a8b8;
+  --line: #120e1a;
+  --soft-line: #453a5a;
+  --accent: #ee8a6f;
+  --accent-dark: #c9604c;
+  --accent-soft: #4a3446;
+  --leaf: #b5cc5f;
+  --leaf-soft: #3a4232;
+  --danger: #ff8a7a;
+  --danger-soft: #4a2c35;
+  --input: #2b2439;
+  --shadow: 3px 3px 0 #1a1524;
 }
 
 * { box-sizing: border-box; }
@@ -171,6 +191,7 @@ textarea { resize: vertical; min-height: 160px; }
 .badge.coin { background: #fff3c4; border-color: #e0b43a; color: #6b4a1a; }
 .task .del { border: none; box-shadow: none; background: none; color: var(--muted); font-size: 1.1rem; padding: 4px 8px; }
 .task .del:hover { color: var(--danger); }
+.task .del.confirm { color: #fff; background: var(--danger); border-radius: 8px; font-size: 0.85rem; }
 .empty { color: var(--muted); text-align: center; padding: 24px 0; }
 
 .alerts { position: sticky; top: 8px; z-index: 10; }

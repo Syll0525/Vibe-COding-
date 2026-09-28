@@ -47,13 +47,28 @@ function load() {
     const data = JSON.parse(localStorage.getItem(STORE_KEY));
     if (data && Array.isArray(data.tasks) && data.notes) return Pet.ensure(data);
   } catch { /* fall through to empty state */ }
-  return Pet.ensure({ tasks: [], notes: {} });
+  return Pet.ensure({ tasks: window.SEED_EXAMPLES ? exampleTasks() : [], notes: {} });
+}
+
+// Sample tasks for the hosted demo, so a first visit shows a reminder within a minute.
+function exampleTasks() {
+  const at = (mins) => localDateTime(new Date(Date.now() + mins * 60 * 1000));
+  const base = { repeat: 'none', done: false, doneAt: null, notified: false };
+  let n = 0;
+  const uid = () => `example-${Date.now().toString(36)}-${n++}`;
+  return [
+    { ...base, id: uid(), title: 'Drink a glass of water', due: at(1), repeat: 'daily' },
+    { ...base, id: uid(), title: 'Study Japanese for 20 minutes', due: at(90), location: 'City Library' },
+    { ...base, id: uid(), title: 'Evening walk', due: at(24 * 60), location: 'Riverside park', repeat: 'weekdays' },
+  ];
 }
 
 let state = load();
 
 function save() {
-  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  } catch { /* storage blocked (private window): keep working in memory */ }
 }
 
 Pet.init({ getState: () => state, save, toast });
@@ -297,8 +312,15 @@ function taskItem(task, { showDay }) {
   }
   body.append(title, meta);
 
+  // Tap once to arm, tap again within 3 seconds to delete.
   const del = button('✕', 'btn del', () => {
-    if (confirm(`Delete "${task.title}"?`)) deleteTask(task.id);
+    if (del.classList.contains('confirm')) {
+      deleteTask(task.id);
+      return;
+    }
+    del.classList.add('confirm');
+    del.textContent = 'Delete?';
+    setTimeout(() => { del.classList.remove('confirm'); del.textContent = '✕'; }, 3000);
   });
   del.setAttribute('aria-label', `Delete "${task.title}"`);
 
@@ -534,6 +556,16 @@ $('#task-form').addEventListener('submit', (e) => {
 
 // ---------- backup ----------
 
+$('#copy-btn').addEventListener('click', async () => {
+  flushNote();
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(state));
+    toast('Backup copied. Paste it somewhere safe.');
+  } catch {
+    toast("Couldn't copy here. Use Export backup instead.");
+  }
+});
+
 $('#export-btn').addEventListener('click', () => {
   flushNote();
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -551,12 +583,12 @@ $('#import-file').addEventListener('change', async (e) => {
   try {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data.tasks) || typeof data.notes !== 'object') throw new Error('bad file');
-    if (!confirm('Replace your current tasks and notes with this backup?')) return;
     state = Pet.ensure({ tasks: data.tasks, notes: data.notes || {}, pet: data.pet });
     save();
     render();
+    toast('Backup restored');
   } catch {
-    alert('That file is not a Daily Reminders backup.');
+    toast('That file is not a Daily Reminders backup.');
   }
 });
 
