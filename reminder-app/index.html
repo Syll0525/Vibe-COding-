@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Reminders</title>
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Daily Reminders</h1>
+      <p id="today-label" class="muted"></p>
+    </div>
+    <button id="notify-btn" class="btn ghost" type="button">Turn on notifications</button>
+  </header>
+
+  <div id="alerts" class="alerts" aria-live="assertive"></div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="tasks" role="tab" type="button">Tasks</button>
+    <button class="tab" data-tab="notes" role="tab" type="button">Daily notes</button>
+  </nav>
+
+  <main class="layout">
+    <section id="panel-tasks" class="panel active" aria-label="Tasks">
+      <form id="task-form" class="card add-form">
+        <input id="task-title" type="text" placeholder="What do you need to do?" required maxlength="200" autocomplete="off">
+        <div class="row">
+          <label>When
+            <input id="task-due" type="datetime-local" required>
+          </label>
+          <label>Repeat
+            <select id="task-repeat">
+              <option value="none">Once</option>
+              <option value="daily">Every day</option>
+              <option value="weekdays">Weekdays</option>
+              <option value="weekly">Every week</option>
+            </select>
+          </label>
+          <button class="btn primary" type="submit">Add</button>
+        </div>
+      </form>
+
+      <div class="summary card">
+        <div><strong id="stat-left">0</strong><span>left today</span></div>
+        <div><strong id="stat-done">0</strong><span>done today</span></div>
+        <div><strong id="stat-streak">0</strong><span>day note streak</span></div>
+      </div>
+
+      <div id="task-groups"></div>
+    </section>
+
+    <section id="panel-notes" class="panel" aria-label="Daily notes">
+      <div class="card">
+        <div class="date-nav">
+          <button id="prev-day" class="btn ghost icon" type="button" aria-label="Previous day">‹</button>
+          <input id="note-date" type="date">
+          <button id="next-day" class="btn ghost icon" type="button" aria-label="Next day">›</button>
+          <button id="go-today" class="btn ghost" type="button">Today</button>
+        </div>
+
+        <h3>What I got done</h3>
+        <ul id="done-that-day" class="done-list"></ul>
+
+        <h3>What I learned</h3>
+        <textarea id="note-text" rows="8" placeholder="Write down what you learned today, what went well, and what to try tomorrow…"></textarea>
+        <p id="save-status" class="muted small">&nbsp;</p>
+      </div>
+
+      <div class="card">
+        <div class="history-head">
+          <h3>Past notes</h3>
+          <input id="note-search" type="search" placeholder="Search notes">
+        </div>
+        <ul id="note-history" class="history"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <button id="export-btn" class="btn ghost" type="button">Export backup</button>
+    <label class="btn ghost">Import backup<input id="import-file" type="file" accept="application/json" hidden></label>
+    <p class="muted small">Your data is saved in this browser only. Keep this page open (a background tab is fine) to get reminders.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
