@@ -20,10 +20,20 @@ const Pet = (() => {
   const $ = (sel) => document.querySelector(sel);
   const clamp = (n) => Math.max(0, Math.min(100, n));
   const isNight = () => { const h = new Date().getHours(); return h >= 22 || h < 7; };
+  const pad = (n) => String(n).padStart(2, '0');
+  const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const fmtTime = (d) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const hashStr = (str) => {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+    return (h >>> 0) / 4294967296;
+  };
 
   let getState;
   let persist;
   let toast;
+  let getProgress = () => ({ doneToday: 0, leftToday: 0, overdue: 0, next: null, streak: 0 });
   const pet = () => getState().pet;
 
   function fresh() {
@@ -31,6 +41,7 @@ const Pet = (() => {
       species: 'hamster', name: 'Hammy', coins: 20, hunger: 80, happy: 80, updatedAt: Date.now(),
       tasksDone: 0, food: { onigiri: 2, cookie: 1 }, owned: [], equipped: {},
       decor: [], hiddenDecor: [], bg: 'day', lastNoteBonus: null, lastPlay: 0, lastPat: 0,
+      role: 'barista', log: {}, moods: {}, lastGreet: 0,
     };
   }
 
@@ -38,6 +49,11 @@ const Pet = (() => {
     const p = Object.assign(fresh(), state.pet || {});
     p.food ||= {};
     p.equipped ||= {};
+    p.log ||= {};
+    p.moods ||= {};
+    // keep two months of diary
+    const oldest = dayKey(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000));
+    for (const k of Object.keys(p.log)) if (k < oldest) delete p.log[k];
     state.pet = p;
     return state;
   }
@@ -59,6 +75,15 @@ const Pet = (() => {
   }
 
   const level = (p) => 1 + Math.floor(p.tasksDone / 5);
+  const roleOf = (p) => Pixel.ROLE_BY_ID[p.role] || Pixel.ROLES[0];
+
+  // Everything that happens goes into the pet's diary, which it reads back when you ask.
+  function logEvent(p, icon, text, extra = {}) {
+    const day = dayKey();
+    const list = (p.log[day] ||= []);
+    list.push({ t: Date.now(), icon, text, ...extra });
+    if (list.length > 200) list.shift();
+  }
 
   // ---------- coins (called from app.js) ----------
 
@@ -71,6 +96,7 @@ const Pet = (() => {
     p.coins += coins;
     p.tasksDone += 1;
     p.happy = clamp(p.happy + 10);
+    logEvent(p, '✅', `You finished "${task.title}"${task.location ? ` at ${task.location}` : ''}${onTime ? '' : ' (a bit late)'}`, { taskId: task.id, coins });
     celebrate();
     say(onTime ? `Yay, right on time! +${coins} coins 🪙` : `Better late than never! +${coins} coins 🪙`);
     return coins;
@@ -82,6 +108,7 @@ const Pet = (() => {
     p.coins = Math.max(0, p.coins - task.coins);
     p.tasksDone = Math.max(0, p.tasksDone - 1);
     task.coins = 0;
+    for (const k of Object.keys(p.log)) p.log[k] = p.log[k].filter((e) => e.taskId !== task.id);
   }
 
   function noteBonus(state, day) {
@@ -89,6 +116,7 @@ const Pet = (() => {
     if (p.lastNoteBonus === day) return 0;
     p.lastNoteBonus = day;
     p.coins += COINS_NOTE;
+    logEvent(p, '📖', 'You wrote down what you learned today', { coins: COINS_NOTE });
     celebrate();
     return COINS_NOTE;
   }
@@ -114,7 +142,7 @@ const Pet = (() => {
       const lines = {
         hungry: ["I'm hungry! Feed me please 🍙", 'My tummy is rumbling… 🥺'],
         sad: ["I'm lonely… let's finish a task together? 🥺", 'Can you pat me? 💗'],
-        happy: ["Let's get things done! ✨", "You're doing great! 💕", 'What a lovely day ☀️', 'I love our little café 🏠'],
+        happy: ["Let's get things done! ✨", "You're doing great! 💕", 'What a lovely day ☀️', `Busy day at the ${roleOf(p).place}! ${roleOf(p).icon}`],
         ok: ["What's next on the list? 📝", 'Tick a task to earn coins 🪙'],
       }[mood(p)];
       text = lines[Math.floor(Date.now() / 60000) % lines.length];
@@ -142,6 +170,7 @@ const Pet = (() => {
     p.hunger = clamp(p.hunger + f.hunger);
     p.happy = clamp(p.happy + f.happy);
     addEffect('eat', 2400, { food: id });
+    logEvent(p, f.icon, `You fed me a ${f.name.toLowerCase()}`);
     say(`Yum, ${f.name.toLowerCase()}! ${f.icon}`);
     commit();
   }
@@ -153,6 +182,7 @@ const Pet = (() => {
     if (now - p.lastPat > PAT_COOLDOWN_MS) {
       p.happy = clamp(p.happy + 3);
       p.lastPat = now;
+      logEvent(p, '💗', 'You gave me head pats');
     }
     addEffect('hearts', 2000);
     say(isNight() ? 'Mmm… *yawn* 💤' : 'Hehe, that tickles! 💗');
@@ -176,6 +206,7 @@ const Pet = (() => {
     p.happy = clamp(p.happy + 15);
     p.hunger = clamp(p.hunger - 5);
     addEffect('ball', 3200);
+    logEvent(p, '⚽', 'We played catch together');
     say('Wheee! Catch! ⚽');
     commit();
   }
@@ -204,6 +235,7 @@ const Pet = (() => {
       toast(`${item.icon} ${item.name} unlocked!`);
     }
     addEffect('hearts', 1500);
+    logEvent(p, '🎁', `You bought ${kind === 'food' ? 'me a' : 'the'} ${item.name.toLowerCase()}`);
     commit();
   }
 
@@ -238,13 +270,14 @@ const Pet = (() => {
     const p = pet();
     const now = Date.now();
     effects = effects.filter((e) => e.until > now);
-    const busy = effects.some((e) => e.kind === 'eat' || e.kind === 'ball');
+    const busy = effects.some((e) => e.kind === 'eat' || e.kind === 'ball' || e.kind === 'wave');
+    const waving = effects.some((e) => e.kind === 'wave');
     const sleeping = isNight() && !effects.length;
     const visibleDecor = p.decor.filter((d) => !p.hiddenDecor.includes(d));
 
-    const key = visibleDecor.join(',') + '|' + p.bg;
+    const key = visibleDecor.join(',') + '|' + p.bg + '|' + p.role;
     if (key !== streetKey) {
-      street = Pixel.buildStreet(visibleDecor, p.bg);
+      street = Pixel.buildStreet(visibleDecor, p.bg, p.role);
       streetKey = key;
     }
 
@@ -270,7 +303,8 @@ const Pet = (() => {
     ctx.fillRect(x + 3, 85, 10, 2);
 
     Pixel.drawPet(ctx, x, y, {
-      species: p.species, equipped: p.equipped, mood: mood(p), sleeping,
+      species: p.species, equipped: p.equipped, role: p.role, mood: waving ? 'happy' : mood(p), sleeping,
+      wave: waving ? Math.floor(t / 3) : null,
       eating: effects.some((e) => e.kind === 'eat') && Math.floor(t / 3) % 2 === 0,
     });
 
@@ -298,6 +332,157 @@ const Pet = (() => {
       ctx.fillRect(x + 15, y + 1, 1, 3);
       ctx.fillRect(x + 15, y + 5, 1, 1);
     }
+  }
+
+  // ---------- greeting ----------
+
+  const MOODS = [
+    { id: 'great', icon: '😄', label: 'Great', reply: 'Yay! Your happy mood makes me happy too! 💕' },
+    { id: 'okay', icon: '🙂', label: 'Okay', reply: "An okay day is still a good day. I'm right here with you ☕" },
+    { id: 'tired', icon: '😴', label: 'Tired', reply: 'Take a little break and drink some water. Small steps still count 💧' },
+    { id: 'stressed', icon: '😣', label: 'Stressed', reply: "Deep breath with me… in… and out. Let's do just one small thing. You can do it 🫶" },
+  ];
+
+  function hello() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'Good morning';
+    if (h >= 12 && h < 17) return 'Good afternoon';
+    if (h >= 17 && h < 22) return 'Good evening';
+    return "You're up late";
+  }
+
+  // Encouragement built from how the day is actually going.
+  function encourage(g = getProgress()) {
+    const parts = [];
+    if (g.doneToday && !g.leftToday) parts.push(`I saw you finished ${g.doneToday === 1 ? 'your task' : `all ${g.doneToday} tasks`} today. Good job! 🎉`);
+    else if (g.doneToday) parts.push(`You've done ${g.doneToday} already, only ${g.leftToday} to go. You've got this! 💪`);
+    else if (g.leftToday && g.next) parts.push(`You have ${plural(g.leftToday, 'task')} today. Next up: "${g.next.title}" at ${g.next.time}. Let's do it together! ✨`);
+    else if (g.leftToday) parts.push(`You have ${plural(g.leftToday, 'task')} today. Let's do it together! ✨`);
+    else parts.push('Your list is clear. Want to plan something nice for today? 🌷');
+    if (g.overdue) parts.push(`Don't forget the ${plural(g.overdue, 'task')} from before 🫶`);
+    if (g.streak >= 2) parts.push(`${g.streak}-day note streak, amazing! 📖`);
+    return parts.join(' ');
+  }
+
+  let greetTimer = null;
+  function closeGreeting() {
+    clearInterval(greetTimer);
+    greetTimer = null;
+    $('#greeting')?.replaceChildren();
+  }
+
+  // Wave hello and ask about the day. Called by app.js when you open or come back to the app.
+  function greet() {
+    const p = pet();
+    const box = $('#greeting');
+    if (!box) return;
+    const today = dayKey();
+    p.lastGreet = Date.now();
+    persist();
+    addEffect('wave', 3500);
+
+    const mini = el('canvas', { class: 'pix wave-pet', width: 20, height: 17 });
+    let f = 0;
+    const draw = () => {
+      const ctx = mini.getContext('2d');
+      ctx.clearRect(0, 0, 20, 17);
+      Pixel.drawPet(ctx, 1, 1, { species: p.species, equipped: p.equipped, role: p.role, mood: 'happy', wave: f++ });
+    };
+    draw();
+    clearInterval(greetTimer);
+    greetTimer = setInterval(draw, 350);
+
+    const body = el('div', { class: 'greet-body' },
+      el('strong', { class: 'greet-title' }, `Hi! 👋 ${hello()}!`),
+      el('p', {}, encourage()));
+    const answered = p.moods[today];
+    if (answered) {
+      body.append(el('p', { class: 'muted small' }, `You said you felt ${answered.icon} ${answered.label.toLowerCase()} today. I'm cheering for you!`));
+    } else {
+      body.append(el('p', { class: 'greet-q' }, "How's your day going?"));
+      body.append(el('div', { class: 'moods' }, ...MOODS.map((m) => el('button', {
+        type: 'button', class: 'mood',
+        onclick: () => {
+          p.moods[today] = { icon: m.icon, label: m.label };
+          logEvent(p, m.icon, `You said hi and felt ${m.label.toLowerCase()}`);
+          p.happy = clamp(p.happy + 5);
+          persist();
+          body.querySelector('.greet-q')?.remove();
+          body.querySelector('.moods')?.replaceWith(el('p', { class: 'greet-reply' }, m.reply));
+          addEffect('hearts', 2000);
+          setTimeout(closeGreeting, 9000);
+        },
+      }, el('span', { class: 'mood-icon' }, m.icon), m.label))));
+    }
+    const close = el('button', { type: 'button', class: 'greet-close', 'aria-label': 'Close', onclick: closeGreeting }, '✕');
+    box.replaceChildren(el('div', { class: 'greeting' }, mini, body, close));
+  }
+
+  const lastGreet = () => pet().lastGreet || 0;
+
+  // ---------- daily report ----------
+
+  let reportDay = null;
+
+  function workFor(p, day) {
+    const role = roleOf(p);
+    const isToday = day === dayKey();
+    const hour = new Date().getHours();
+    const [y, m, d] = day.split('-').map(Number);
+    return role.work
+      .filter(([h]) => !isToday || h <= hour)
+      .map(([h, text, icon], i) => {
+        const r = hashStr(`${day}:${role.id}:${i}`);
+        return {
+          t: new Date(y, m - 1, d, h, Math.floor(r * 50)).getTime(),
+          icon, work: true,
+          text: `I ${text.charAt(0).toLowerCase()}${text.slice(1).replace('{n}', 4 + Math.floor(r * 20))}`,
+        };
+      });
+  }
+
+  function renderReport() {
+    const box = $('#pet-report');
+    if (!box) return;
+    if (!reportDay) {
+      box.hidden = true;
+      return;
+    }
+    const p = pet();
+    const role = roleOf(p);
+    const isToday = reportDay === dayKey();
+    const events = [...(p.log[reportDay] || []), ...workFor(p, reportDay)].sort((a, b) => a.t - b.t);
+    const coins = events.reduce((sum, e) => sum + (e.coins || 0), 0);
+    const tasks = events.filter((e) => e.taskId).length;
+
+    const items = events.map((e) => el('li', { class: e.work ? 'work' : '' },
+      el('span', { class: 'r-time' }, fmtTime(new Date(e.t))),
+      el('span', { class: 'r-icon' }, e.icon),
+      el('span', {}, e.text)));
+
+    const summary = isToday
+      ? `So far today you finished ${plural(tasks, 'task')} and earned ${coins} 🪙. ${encourage()}`
+      : `That day you finished ${plural(tasks, 'task')} and earned ${coins} 🪙. ${tasks ? 'I was so proud of you! 💕' : 'Rest days matter too 🌙'}`;
+
+    box.hidden = false;
+    box.replaceChildren(
+      el('div', { class: 'report-head' },
+        el('h3', {}, `${p.name}'s diary · ${role.icon} ${role.name}`),
+        el('div', { class: 'report-days' },
+          el('button', { type: 'button', class: 'btn small' + (isToday ? ' on' : ''), onclick: () => openReport(dayKey()) }, 'Today'),
+          el('button', { type: 'button', class: 'btn small' + (isToday ? '' : ' on'), onclick: () => openReport(dayKey(new Date(Date.now() - 864e5))) }, 'Yesterday'),
+          el('button', { type: 'button', class: 'btn small', 'aria-label': 'Close diary', onclick: () => { reportDay = null; renderReport(); } }, '✕'))),
+      items.length ? el('ul', { class: 'report-list' }, ...items)
+        : el('p', { class: 'muted' }, isToday ? "It's early! Nothing much has happened yet." : 'I have no diary for that day.'),
+      el('p', { class: 'report-summary' }, summary));
+  }
+
+  function openReport(day = dayKey()) {
+    reportDay = day;
+    renderReport();
+    const p = pet();
+    say(day === dayKey() ? `Here's what I did today at the ${roleOf(p).place}! 📋` : "Here's my diary from yesterday 📋");
+    $('#pet-report')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   // ---------- panel UI ----------
@@ -408,7 +593,18 @@ const Pet = (() => {
         if (wasDefault) p.name = ch.name;
         commit();
       },
-    }, petCanvas({ species: ch.id, equipped: p.equipped }), el('span', {}, ch.kind)))));
+    }, petCanvas({ species: ch.id, equipped: p.equipped, role: p.role }), el('span', {}, ch.kind)))));
+
+    box.append(el('h3', {}, 'Job'));
+    box.append(el('div', { class: 'chars' }, ...Pixel.ROLES.map((r) => el('button', {
+      type: 'button', class: 'char' + (p.role === r.id ? ' active' : ''),
+      onclick: () => {
+        p.role = r.id;
+        logEvent(p, r.icon, `I started working as a ${r.name.toLowerCase()}`);
+        say(`I'm a ${r.name.toLowerCase()} now! ${r.icon}`);
+        commit();
+      },
+    }, petCanvas({ species: p.species, role: r.id }), el('span', {}, `${r.icon} ${r.name}`)))));
 
     const worn = Pixel.ACCESSORIES.filter((a) => p.owned.includes(a.id)).map((a) => {
       const on = p.equipped[a.slot] === a.id;
@@ -457,19 +653,21 @@ const Pet = (() => {
     decay(p);
     $('#coin-count').textContent = p.coins;
     $('#pet-name').textContent = p.name;
-    $('#pet-level').textContent = `Lv ${level(p)} ${Pixel.CHAR_BY_ID[p.species].kind} · ${p.tasksDone} ${p.tasksDone === 1 ? 'task' : 'tasks'} done`;
+    $('#pet-level').textContent = `Lv ${level(p)} ${roleOf(p).icon} ${roleOf(p).name} · ${plural(p.tasksDone, 'task')} done`;
     $('#bar-hunger').style.width = `${p.hunger}%`;
     $('#bar-happy').style.width = `${p.happy}%`;
     $('#bar-hunger').parentElement.setAttribute('aria-valuenow', Math.round(p.hunger));
     $('#bar-happy').parentElement.setAttribute('aria-valuenow', Math.round(p.happy));
     renderSpeech();
     renderView();
+    renderReport();
   }
 
   function init(opts) {
     ({ getState, save: persist, toast } = opts);
+    if (opts.getProgress) getProgress = opts.getProgress;
     document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => {
-      ({ feed: () => feed(), pat, play })[b.dataset.act]();
+      ({ feed: () => feed(), pat, play, ask: () => openReport() })[b.dataset.act]();
     }));
     document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => showView(b.dataset.view)));
     $('#scene').addEventListener('click', pat);
@@ -478,5 +676,5 @@ const Pet = (() => {
     render();
   }
 
-  return { ensure, reward, takeBack, noteBonus, init, render };
+  return { ensure, reward, takeBack, noteBonus, init, render, greet, lastGreet, encourage, roleOf: () => roleOf(pet()), name: () => pet().name };
 })();

@@ -24,6 +24,7 @@
     </div>
   </header>
 
+  <div id="greeting" class="greeting-wrap" aria-live="polite"></div>
   <div id="alerts" class="alerts" aria-live="assertive"></div>
 
   <main class="layout">
@@ -37,15 +38,18 @@
       <form id="task-form" class="card add-form">
         <input id="task-title" type="text" placeholder="What do you need to do?" required maxlength="200" autocomplete="off">
         <div class="row">
-          <label>When
-            <input id="task-due" type="datetime-local" required>
+          <label>Date
+            <input id="task-date" type="date" required>
           </label>
+          <label>Time
+            <input id="task-time" type="time" required>
+          </label>
+        </div>
+        <div class="row">
           <label>Where <span class="optional">(optional)</span>
             <input id="task-location" type="text" placeholder="📍 e.g. Gym, Library" maxlength="100" list="past-locations" autocomplete="off">
             <datalist id="past-locations"></datalist>
           </label>
-        </div>
-        <div class="row">
           <label>Repeat
             <select id="task-repeat">
               <option value="none">Once</option>
@@ -54,9 +58,31 @@
               <option value="weekly">Every week</option>
             </select>
           </label>
+        </div>
+        <fieldset class="alert-pick">
+          <legend>Remind me</legend>
+          <div id="task-alerts" class="chips"></div>
+        </fieldset>
+        <div class="row end">
           <button class="btn primary" type="submit">Add task</button>
         </div>
       </form>
+
+      <details id="settings" class="card settings">
+        <summary>🔔 Reminder settings</summary>
+        <h3>Remind me by default</h3>
+        <div id="default-alerts" class="chips"></div>
+        <h3>Daily messages from your buddy</h3>
+        <div class="setting-row">
+          <label class="switch"><input id="morning-on" type="checkbox"> ☀️ Morning plan: today's tasks</label>
+          <input id="morning-time" type="time" aria-label="Morning message time">
+        </div>
+        <div class="setting-row">
+          <label class="switch"><input id="evening-on" type="checkbox"> 🌙 Evening check-in: how the day went</label>
+          <input id="evening-time" type="time" aria-label="Evening message time">
+        </div>
+        <button id="test-notify" class="btn small" type="button">Send a test reminder</button>
+      </details>
 
       <div class="summary card">
         <div><strong id="stat-left">0</strong><span>left today</span></div>
@@ -64,7 +90,12 @@
         <div><strong id="stat-streak">0</strong><span>day note streak</span></div>
       </div>
 
+      <div class="view-toggle" role="group" aria-label="Task view">
+        <button class="btn small view-btn on" data-taskview="list" type="button">📋 List</button>
+        <button class="btn small view-btn" data-taskview="cal" type="button">📅 Calendar</button>
+      </div>
       <div id="task-groups"></div>
+      <div id="calendar" class="card calendar" hidden></div>
     </section>
 
     <div class="side">
@@ -76,8 +107,11 @@
             <button type="button" data-act="feed"><span class="nub"></span>Feed</button>
             <button type="button" data-act="pat"><span class="nub"></span>Pat</button>
             <button type="button" data-act="play"><span class="nub"></span>Play</button>
+            <button type="button" data-act="ask"><span class="nub ask"></span>My day?</button>
           </div>
         </div>
+
+        <div id="pet-report" class="card report" hidden></div>
 
         <div class="card pet-stats">
           <div class="pet-title">

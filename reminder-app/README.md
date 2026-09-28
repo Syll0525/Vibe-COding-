@@ -10,6 +10,11 @@ A small reminder app that runs in your browser. No install, no account, no serve
   - Earn 🪙 **10 coins** for each task ticked on time (up to 1 hour late), 🪙 5 if later, and 🪙 5 for writing today's note.
   - Spend coins in the **Shop**: snacks (feed your buddy), outfits (bow, daisy, party hat, beret, crown, shades, scarf, café apron), street decor (umbrella table, bench, lamps, tree, bush, menu board, sunflower, rooftop garden, a little bird) and sunset/night skies.
   - Your buddy gets hungry and lonely over about a day. **Feed**, **Pat** (or tap the scene) and **Play** to keep it happy. It sleeps from 10pm to 7am.
+- **Your buddy says hi.** Every time you open the app (or come back after 10+ minutes) your buddy waves, says hello, and cheers you on based on your day: "I saw you finished all 3 tasks today. Good job! 🎉". It asks how your day is going (😄 Great / 🙂 Okay / 😴 Tired / 😣 Stressed) and answers kindly.
+- **Jobs.** Pick one of 5 cute jobs: ☕ Barista, 🥐 Baker, 🍹 Mocktail mixer, 💐 Florist, 📚 Librarian. Each job has its own hat or glasses, a prop, and things in the shop window.
+- **"My day?"** Tap it and your buddy reads you its diary for today or yesterday: the work it did at its job, the tasks you finished, snacks, pats, your mood, and the coins you earned.
+- **Calendar.** Pick a date and a time for each task. Switch the task list to 📅 Calendar to see the month, tap a day to see its tasks or add one on that day.
+- **Choose when to be reminded.** For each task pick any of: at the time, 10 min, 30 min, 1 hour, 2 hours, or 1 day before. In 🔔 Reminder settings choose the defaults, a ☀️ morning plan (today's tasks) and a 🌙 evening check-in, each at the time you want. "Send a test reminder" checks it works.
 - **Backup.** Export everything to a JSON file and import it on another browser.
 
 ## How to open it

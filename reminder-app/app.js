@@ -5,6 +5,28 @@ const SNOOZE_MINUTES = 10;
 const CHECK_EVERY_MS = 10 * 1000;
 // Reminders missed by more than this while the page was closed are not replayed.
 const REPLAY_WINDOW_MS = 12 * 60 * 60 * 1000;
+// Morning/evening messages are skipped if the app was closed for longer than this after their time.
+const SUMMARY_WINDOW_MS = 3 * 60 * 60 * 1000;
+// Coming back to the app after this long gets a new hello from the pet.
+const GREET_AFTER_MS = 10 * 60 * 1000;
+
+// When to be reminded, in minutes before the task.
+const ALERT_OPTIONS = [
+  { min: 0, label: 'At the time', short: 'on time', soon: 'now' },
+  { min: 10, label: '10 min before', short: '10m', soon: 'in 10 minutes' },
+  { min: 30, label: '30 min before', short: '30m', soon: 'in 30 minutes' },
+  { min: 60, label: '1 hour before', short: '1h', soon: 'in 1 hour' },
+  { min: 120, label: '2 hours before', short: '2h', soon: 'in 2 hours' },
+  { min: 1440, label: '1 day before', short: '1 day', soon: 'tomorrow' },
+];
+const ALERT_BY_MIN = Object.fromEntries(ALERT_OPTIONS.map((o) => [o.min, o]));
+
+const DEFAULT_SETTINGS = {
+  defaultAlerts: [0],
+  morning: { on: true, time: '08:00' },
+  evening: { on: true, time: '21:00' },
+  last: { morning: null, evening: null },
+};
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -45,20 +67,38 @@ function nextOccurrence(due, repeat) {
 function load() {
   try {
     const data = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (data && Array.isArray(data.tasks) && data.notes) return Pet.ensure(data);
+    if (data && Array.isArray(data.tasks) && data.notes) return upgrade(data);
   } catch { /* fall through to empty state */ }
-  return Pet.ensure({ tasks: window.SEED_EXAMPLES ? exampleTasks() : [], notes: {} });
+  return upgrade({ tasks: window.SEED_EXAMPLES ? exampleTasks() : [], notes: {} });
+}
+
+// Fill in anything older saved data is missing.
+function upgrade(data) {
+  Pet.ensure(data);
+  const s = data.settings || {};
+  data.settings = {
+    ...DEFAULT_SETTINGS, ...s,
+    morning: { ...DEFAULT_SETTINGS.morning, ...s.morning },
+    evening: { ...DEFAULT_SETTINGS.evening, ...s.evening },
+    last: { ...DEFAULT_SETTINGS.last, ...s.last },
+  };
+  for (const t of data.tasks) {
+    if (!Array.isArray(t.alerts)) t.alerts = [0];
+    if (!Array.isArray(t.sent)) t.sent = t.notified ? [...t.alerts] : [];
+    delete t.notified;
+  }
+  return data;
 }
 
 // Sample tasks for the hosted demo, so a first visit shows a reminder within a minute.
 function exampleTasks() {
   const at = (mins) => localDateTime(new Date(Date.now() + mins * 60 * 1000));
-  const base = { repeat: 'none', done: false, doneAt: null, notified: false };
+  const base = { repeat: 'none', done: false, doneAt: null, alerts: [0], sent: [] };
   let n = 0;
   const uid = () => `example-${Date.now().toString(36)}-${n++}`;
   return [
     { ...base, id: uid(), title: 'Drink a glass of water', due: at(1), repeat: 'daily' },
-    { ...base, id: uid(), title: 'Study Japanese for 20 minutes', due: at(90), location: 'City Library' },
+    { ...base, id: uid(), title: 'Study Japanese for 20 minutes', due: at(90), location: 'City Library', alerts: [0, 30] },
     { ...base, id: uid(), title: 'Evening walk', due: at(24 * 60), location: 'Riverside park', repeat: 'weekdays' },
   ];
 }
@@ -71,13 +111,16 @@ function save() {
   } catch { /* storage blocked (private window): keep working in memory */ }
 }
 
-Pet.init({ getState: () => state, save, toast });
+Pet.init({ getState: () => state, save, toast, getProgress: progress });
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const findTask = (id) => state.tasks.find((t) => t.id === id);
 
-function addTask(title, due, repeat, location) {
-  state.tasks.push({ id: uid(), title, due, repeat, location, done: false, doneAt: null, notified: new Date(due) <= new Date() });
+function addTask(title, due, repeat, location, alerts) {
+  const dueMs = new Date(due).getTime();
+  // reminders whose time has already passed are not sent
+  const sent = alerts.filter((min) => dueMs - min * 60000 <= Date.now());
+  state.tasks.push({ id: uid(), title, due, repeat, location, alerts, sent, done: false, doneAt: null });
   save();
   render();
 }
@@ -98,8 +141,8 @@ function setDone(id, done) {
     task.spawned = true;
     state.tasks.push({
       id: uid(), title: task.title, repeat: task.repeat, location: task.location,
-      due: nextOccurrence(task.due, task.repeat),
-      done: false, doneAt: null, notified: false,
+      due: nextOccurrence(task.due, task.repeat), alerts: [...task.alerts], sent: [],
+      done: false, doneAt: null,
     });
   }
   dismissAlert(id);
@@ -111,7 +154,8 @@ function snooze(id) {
   const task = findTask(id);
   if (!task) return;
   task.due = localDateTime(new Date(Date.now() + SNOOZE_MINUTES * 60 * 1000));
-  task.notified = false;
+  if (!task.alerts.includes(0)) task.alerts.push(0);
+  task.sent = task.alerts.filter((min) => min !== 0);
   dismissAlert(id);
   save();
   render();
@@ -186,40 +230,111 @@ function chime() {
   });
 }
 
-function systemNotify(task) {
+function systemNotify(title, body, { tag, taskId, actions } = {}) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const body = `It's time! (${fmtTime(new Date(task.due))})` + (task.location ? `\n📍 ${task.location}` : '');
   if (swReg) {
-    swReg.showNotification(`⏰ ${task.title}`, {
-      body, tag: task.id, requireInteraction: true, icon: 'icon.svg', data: { id: task.id },
-      actions: [{ action: 'done', title: '✓ Mark done' }, { action: 'snooze', title: `Snooze ${SNOOZE_MINUTES} min` }],
+    swReg.showNotification(title, {
+      body, tag, requireInteraction: !!taskId, icon: 'icon.svg', data: { id: taskId },
+      actions: actions ? [{ action: 'done', title: '✓ Mark done' }, { action: 'snooze', title: `Snooze ${SNOOZE_MINUTES} min` }] : [],
     });
   } else {
     try {
-      const n = new Notification(`⏰ ${task.title}`, { body, tag: task.id, requireInteraction: true, icon: 'icon.svg' });
+      const n = new Notification(title, { body, tag, icon: 'icon.svg' });
       n.onclick = () => { window.focus(); n.close(); };
     } catch { /* some mobile browsers only allow service worker notifications */ }
   }
 }
 
-function showAlert(task) {
-  if (document.getElementById(`alert-${task.id}`)) return;
+// A banner at the top of the page. `taskId` lets ticking the task clear its banners.
+function showBanner({ id, text, taskId, buttons, autoClose }) {
+  if (document.getElementById(id)) return;
   const el = document.createElement('div');
   el.className = 'alert';
-  el.id = `alert-${task.id}`;
+  el.id = id;
+  if (taskId) el.dataset.task = taskId;
   const msg = document.createElement('span');
   msg.className = 'msg';
-  msg.textContent = `⏰ ${task.title}` + (task.location ? ` · 📍 ${task.location}` : '');
-  const done = button('✓ Done', 'btn', () => setDone(task.id, true));
-  const later = button(`Snooze ${SNOOZE_MINUTES} min`, 'btn', () => snooze(task.id));
-  const close = button('✕', 'btn', () => dismissAlert(task.id));
+  msg.textContent = text;
+  el.append(msg, ...buttons.map((b) => button(b.label, 'btn', () => { b.onClick(); if (b.close) el.remove(); updateTitle(); })));
+  const close = button('✕', 'btn', () => { el.remove(); updateTitle(); });
   close.setAttribute('aria-label', 'Dismiss');
-  el.append(msg, done, later, close);
+  el.append(close);
   $('#alerts').append(el);
+  if (autoClose) setTimeout(() => { el.remove(); updateTitle(); }, autoClose);
+}
+
+const petSign = () => `— ${Pet.name()} ${Pet.roleOf().icon}`;
+
+function fireTaskAlert(task, min) {
+  const time = fmtTime(new Date(task.due));
+  const where = task.location ? ` · 📍 ${task.location}` : '';
+  if (min === 0) {
+    showBanner({
+      id: `alert-${task.id}-0`, taskId: task.id, text: `⏰ ${task.title}${where}`,
+      buttons: [{ label: '✓ Done', onClick: () => setDone(task.id, true) }, { label: `Snooze ${SNOOZE_MINUTES} min`, onClick: () => snooze(task.id) }],
+    });
+    systemNotify(`⏰ ${task.title}`, `It's time! (${time})${task.location ? `\n📍 ${task.location}` : ''}\n${petSign()}`,
+      { tag: task.id, taskId: task.id, actions: true });
+  } else {
+    const soon = ALERT_BY_MIN[min]?.soon || `in ${min} minutes`;
+    showBanner({
+      id: `alert-${task.id}-${min}`, taskId: task.id, text: `🔔 ${soon[0].toUpperCase()}${soon.slice(1)}: ${task.title} at ${time}${where}`,
+      buttons: [{ label: '✓ Done', onClick: () => setDone(task.id, true) }],
+    });
+    systemNotify(`🔔 ${task.title} ${soon}`, `At ${time}${task.location ? ` · 📍 ${task.location}` : ''}\n${petSign()}`, { tag: `${task.id}-${min}` });
+  }
+}
+
+function tasksOn(key) {
+  return state.tasks.filter((t) => !t.done && t.due.slice(0, 10) === key).sort(byDue);
+}
+
+function morningSummary() {
+  const list = tasksOn(todayKey());
+  const text = list.length
+    ? `☀️ Good morning! ${list.length} ${list.length === 1 ? 'task' : 'tasks'} today: ${list.map((t) => `${t.title} (${fmtTime(new Date(t.due))})`).join(', ')}`
+    : '☀️ Good morning! Nothing planned today. Want to add something?';
+  showBanner({ id: `summary-morning-${todayKey()}`, text, buttons: [], autoClose: 2 * 60 * 1000 });
+  systemNotify(`☀️ Good morning from ${Pet.name()}!`, `${text.replace('☀️ Good morning! ', '')}\n${petSign()}`, { tag: 'morning' });
+}
+
+function eveningCheckin() {
+  const g = progress();
+  const wrote = !!state.notes[todayKey()]?.trim();
+  const text = `🌙 ${g.doneToday} done today${g.leftToday ? `, ${g.leftToday} still open` : ''}. `
+    + (wrote ? 'Thanks for writing your note!' : 'What did you learn today? Write it down for +5 🪙');
+  showBanner({
+    id: `summary-evening-${todayKey()}`, text,
+    buttons: wrote ? [] : [{ label: '📖 Write note', close: true, onClick: () => openNoteDay(todayKey()) }],
+    autoClose: 2 * 60 * 1000,
+  });
+  systemNotify(`🌙 Evening check-in from ${Pet.name()}`, `${text.replace('🌙 ', '')}\n${petSign()}`, { tag: 'evening' });
+}
+
+function checkSummaries(now) {
+  const s = state.settings;
+  const today = todayKey();
+  let changed = false;
+  let fired = false;
+  for (const [kind, show] of [['morning', morningSummary], ['evening', eveningCheckin]]) {
+    const cfg = s[kind];
+    if (!cfg.on || s.last[kind] === today) continue;
+    const [h, m] = cfg.time.split(':').map(Number);
+    const at = new Date();
+    at.setHours(h, m, 0, 0);
+    if (now < at.getTime()) continue;
+    s.last[kind] = today;
+    changed = true;
+    if (now - at.getTime() <= SUMMARY_WINDOW_MS) {
+      show();
+      fired = true;
+    }
+  }
+  return { changed, fired };
 }
 
 function dismissAlert(id) {
-  document.getElementById(`alert-${id}`)?.remove();
+  document.querySelectorAll(`[data-task="${id}"]`).forEach((el) => el.remove());
   updateTitle();
 }
 
@@ -233,19 +348,25 @@ function checkReminders() {
   let changed = false;
   let rang = false;
   for (const task of state.tasks) {
-    if (task.done || task.notified) continue;
+    if (task.done) continue;
     const due = new Date(task.due).getTime();
-    if (due > now) continue;
-    task.notified = true;
-    changed = true;
-    if (now - due <= REPLAY_WINDOW_MS) {
-      showAlert(task);
-      systemNotify(task);
-      rang = true;
+    for (const min of [...task.alerts].sort((a, b) => b - a)) {
+      if (task.sent.includes(min)) continue;
+      const at = due - min * 60000;
+      if (at > now) continue;
+      task.sent.push(min);
+      changed = true;
+      // an early reminder that is only noticed after the task is due is replaced by the on-time one
+      if (min > 0 && now >= due) continue;
+      if (now - at <= REPLAY_WINDOW_MS) {
+        fireTaskAlert(task, min);
+        rang = true;
+      }
     }
   }
-  if (rang) chime();
-  if (changed) {
+  const summaries = checkSummaries(now);
+  if (rang || summaries.fired) chime();
+  if (changed || summaries.changed) {
     save();
     render();
   }
@@ -295,6 +416,13 @@ function taskItem(task, { showDay }) {
     ? `Done at ${fmtTime(new Date(task.doneAt))}`
     : (showDay ? `${fmtDay(due)}, ` : '') + fmtTime(due);
   meta.append(when);
+  if (!task.done) {
+    const bell = document.createElement('span');
+    bell.textContent = task.alerts.length
+      ? `🔔 ${[...task.alerts].sort((a, b) => b - a).map((m) => ALERT_BY_MIN[m]?.short || `${m}m`).join(' + ')}`
+      : '🔕 no reminder';
+    meta.append(bell);
+  }
   if (task.location) {
     const where = document.createElement('a');
     where.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location)}`;
@@ -378,6 +506,96 @@ function noteStreak() {
   }
   return n;
 }
+
+// How today is going, for the pet's encouragement.
+function progress() {
+  const today = todayKey();
+  const now = new Date();
+  const open = state.tasks.filter((t) => !t.done).sort(byDue);
+  const left = open.filter((t) => t.due.slice(0, 10) === today);
+  const next = left.find((t) => new Date(t.due) >= now) || left[0];
+  return {
+    doneToday: state.tasks.filter((t) => doneOn(t, today)).length,
+    leftToday: left.length,
+    overdue: open.filter((t) => t.due.slice(0, 10) < today).length,
+    next: next && { title: next.title, time: fmtTime(new Date(next.due)) },
+    streak: noteStreak(),
+  };
+}
+
+// ---------- calendar ----------
+
+let taskView = 'list';
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let calDay = todayKey();
+
+function el(tag, props = {}, ...children) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children.filter((c) => c != null));
+  return node;
+}
+
+function renderCalendar() {
+  const box = $('#calendar');
+  $('#task-groups').hidden = taskView !== 'list';
+  box.hidden = taskView !== 'cal';
+  document.querySelectorAll('.view-btn').forEach((b) => b.classList.toggle('on', b.dataset.taskview === taskView));
+  if (taskView !== 'cal') return;
+
+  const today = todayKey();
+  const y = calMonth.getFullYear();
+  const m = calMonth.getMonth();
+  const head = el('div', { className: 'cal-head' },
+    el('button', { type: 'button', className: 'btn ghost icon', ariaLabel: 'Previous month', onclick: () => { calMonth = new Date(y, m - 1, 1); renderCalendar(); } }, '‹'),
+    el('strong', {}, calMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })),
+    el('button', { type: 'button', className: 'btn ghost icon', ariaLabel: 'Next month', onclick: () => { calMonth = new Date(y, m + 1, 1); renderCalendar(); } }, '›'));
+
+  const grid = el('div', { className: 'cal-grid' });
+  for (let i = 0; i < 7; i++) { // 1 Jan 2024 was a Monday
+    grid.append(el('span', { className: 'cal-dow' }, new Date(2024, 0, 1 + i).toLocaleDateString([], { weekday: 'narrow' })));
+  }
+  const lead = (new Date(y, m, 1).getDay() + 6) % 7;
+  for (let i = 0; i < lead; i++) grid.append(el('span'));
+  const days = new Date(y, m + 1, 0).getDate();
+  for (let d = 1; d <= days; d++) {
+    const key = dayKey(new Date(y, m, d));
+    const onDay = state.tasks.filter((t) => t.due.slice(0, 10) === key);
+    const dots = el('span', { className: 'cal-dots' }, ...onDay.slice(0, 4).map((t) => el('i', {
+      className: t.done ? 'dot done' : key < today ? 'dot late' : 'dot',
+    })));
+    grid.append(el('button', {
+      type: 'button',
+      className: 'cal-day' + (key === today ? ' today' : '') + (key === calDay ? ' selected' : '') + (key < today ? ' past' : ''),
+      ariaLabel: `${fmtLongDay(new Date(y, m, d))}, ${onDay.length} tasks`,
+      onclick: () => {
+        calDay = key;
+        if (key >= today) $('#task-date').value = key;
+        renderCalendar();
+      },
+    }, el('span', {}, String(d)), dots));
+  }
+
+  const list = state.tasks.filter((t) => t.due.slice(0, 10) === calDay).sort(byDue);
+  const dayBox = el('div', { className: 'cal-list' }, el('h3', {}, fmtLongDay(parseDay(calDay))));
+  if (list.length) dayBox.append(el('ul', { className: 'task-list' }, ...list.map((t) => taskItem(t, { showDay: false }))));
+  else dayBox.append(el('p', { className: 'muted small' }, 'Nothing planned for this day.'));
+  if (calDay >= today) {
+    dayBox.append(el('button', {
+      type: 'button', className: 'btn small',
+      onclick: () => {
+        $('#task-date').value = calDay;
+        $('#task-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        $('#task-title').focus({ preventScroll: true });
+      },
+    }, '＋ Add a task on this day'));
+  }
+  box.replaceChildren(head, grid, dayBox);
+}
+
+document.querySelectorAll('.view-btn').forEach((b) => b.addEventListener('click', () => {
+  taskView = b.dataset.taskview;
+  renderCalendar();
+}));
 
 // ---------- daily notes ----------
 
@@ -540,19 +758,77 @@ function defaultDue() {
   return localDateTime(d);
 }
 
-$('#task-due').value = defaultDue();
+function chips(container, idPrefix, selected, onChange) {
+  container.replaceChildren(...ALERT_OPTIONS.map((o) => {
+    const input = el('input', { type: 'checkbox', id: `${idPrefix}-${o.min}`, value: String(o.min), checked: selected.includes(o.min) });
+    if (onChange) input.addEventListener('change', onChange);
+    return el('label', { className: 'chip', htmlFor: input.id }, input, el('span', {}, o.label));
+  }));
+}
+const checkedMins = (container) => [...container.querySelectorAll('input:checked')].map((i) => Number(i.value));
+
+function resetForm() {
+  const [date, time] = defaultDue().split('T');
+  $('#task-date').value = date;
+  $('#task-time').value = time;
+  $('#task-date').min = todayKey();
+  chips($('#task-alerts'), 'alert', state.settings.defaultAlerts);
+}
+
+resetForm();
 $('#task-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const title = $('#task-title').value.trim();
-  const due = $('#task-due').value;
-  if (!title || !due) return;
-  addTask(title, due, $('#task-repeat').value, $('#task-location').value.trim());
+  const date = $('#task-date').value;
+  const time = $('#task-time').value;
+  if (!title || !date || !time) return;
+  addTask(title, `${date}T${time}`, $('#task-repeat').value, $('#task-location').value.trim(), checkedMins($('#task-alerts')));
+  toast(`Added "${title}" for ${fmtDay(parseDay(date))}, ${fmtTime(new Date(`${date}T${time}`))}`);
   $('#task-title').value = '';
   $('#task-location').value = '';
-  $('#task-due').value = defaultDue();
   $('#task-repeat').value = 'none';
+  resetForm();
   $('#task-title').focus();
 });
+
+// ---------- reminder settings ----------
+
+function renderSettings() {
+  const s = state.settings;
+  chips($('#default-alerts'), 'default-alert', s.defaultAlerts, () => {
+    s.defaultAlerts = checkedMins($('#default-alerts'));
+    chips($('#task-alerts'), 'alert', s.defaultAlerts);
+    save();
+  });
+  $('#morning-on').checked = s.morning.on;
+  $('#morning-time').value = s.morning.time;
+  $('#evening-on').checked = s.evening.on;
+  $('#evening-time').value = s.evening.time;
+}
+
+for (const kind of ['morning', 'evening']) {
+  $(`#${kind}-on`).addEventListener('change', (e) => { state.settings[kind].on = e.target.checked; save(); });
+  $(`#${kind}-time`).addEventListener('change', (e) => {
+    if (!e.target.value) return;
+    state.settings[kind].time = e.target.value;
+    state.settings.last[kind] = null; // a new time today may still fire
+    save();
+  });
+}
+
+$('#test-notify').addEventListener('click', async () => {
+  unlockAudio();
+  if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+  updateNotifyButton();
+  showBanner({ id: `test-${Date.now()}`, text: `🔔 This is how ${Pet.name()} will remind you!`, buttons: [], autoClose: 15000 });
+  systemNotify(`🔔 Hi from ${Pet.name()}!`, `Reminders are working ${petSign()}`, { tag: 'test' });
+  chime();
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    toast('Pop-up notifications are off here, so reminders show as banners in the app.');
+  }
+});
+
+renderSettings();
 
 // ---------- backup ----------
 
@@ -583,7 +859,7 @@ $('#import-file').addEventListener('change', async (e) => {
   try {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data.tasks) || typeof data.notes !== 'object') throw new Error('bad file');
-    state = Pet.ensure({ tasks: data.tasks, notes: data.notes || {}, pet: data.pet });
+    state = upgrade({ tasks: data.tasks, notes: data.notes || {}, pet: data.pet, settings: data.settings });
     save();
     render();
     toast('Backup restored');
@@ -602,6 +878,7 @@ function renderLocations() {
 function render() {
   $('#today-label').textContent = fmtLongDay(new Date());
   renderTasks();
+  renderCalendar();
   renderNotes();
   renderLocations();
   Pet.render();
@@ -636,3 +913,11 @@ if (launch.get('id')) {
 updateNotifyButton();
 render();
 checkReminders();
+
+// The pet says hi every time you open the app, and again when you come back after a while.
+Pet.greet();
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (hiddenAt && Date.now() - hiddenAt > GREET_AFTER_MS) Pet.greet();
+});

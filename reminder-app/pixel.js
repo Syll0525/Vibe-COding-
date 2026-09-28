@@ -147,6 +147,116 @@ const Pixel = (() => {
   const ACC_BY_ID = Object.fromEntries(ACCESSORIES.map((a) => [a.id, a]));
   const SLOT_ORDER = ['body', 'face', 'head'];
 
+  // ---------- jobs ----------
+  // Each job has a hat or face piece (hidden when an outfit uses that slot), a prop held
+  // at the side, things shown in the café's upper window, and the work it does all day.
+
+  const ROLES = [
+    {
+      id: 'barista', name: 'Barista', icon: '☕', place: 'café',
+      hat: { slot: 'head', dx: 3, dy: 1, colors: { n: '#7a5548', d: '#5b4038' }, rows: ['...nnnn...', '..nnnnnn..', 'dddddddddd'] },
+      prop: { dx: 13, dy: 9, colors: { w: '#ffffff', s: '#d9cfc4', c: '#8a5a3b' }, rows: ['.s..', 'wccw', 'www.'] },
+      shelf: (ctx) => {
+        for (const x of [107, 114, 121, 128]) {
+          rect(ctx, '#ffffff', x, 32, 4, 3);
+          rect(ctx, '#8a5a3b', x, 32, 4, 1);
+          rect(ctx, '#ffffff', x + 4, 33, 1, 1);
+        }
+      },
+      work: [
+        [7, 'Opened the café and warmed up the espresso machine', '☕'],
+        [9, 'Brewed {n} lattes for the morning rush', '🥛'],
+        [11, 'Drew a heart in the latte foam', '💗'],
+        [13, 'Tried a new caramel recipe', '🍮'],
+        [15, 'Served {n} iced coffees on the terrace', '🧊'],
+        [18, 'Wiped the counter and closed up', '🧽'],
+      ],
+    },
+    {
+      id: 'baker', name: 'Baker', icon: '🥐', place: 'bakery',
+      hat: { slot: 'head', dx: 4, dy: 0, colors: { w: '#ffffff' }, rows: ['.oooooo.', 'owwwwwwo', 'owwwwwwo', '.oooooo.'] },
+      prop: { dx: 13, dy: 11, colors: { c: '#e0a052', d: '#b8742e' }, rows: ['.cc.', 'cdcc', 'c..c'] },
+      shelf: (ctx) => {
+        for (const x of [106, 114, 122, 130]) {
+          rect(ctx, '#e0a052', x, 32, 6, 3);
+          rect(ctx, '#f3c27a', x + 1, 32, 4, 1);
+          rect(ctx, '#b8742e', x + 2, 33, 1, 1);
+          rect(ctx, '#b8742e', x + 4, 33, 1, 1);
+        }
+      },
+      work: [
+        [6, 'Baked {n} croissants at sunrise', '🥐'],
+        [8, 'Kneaded dough for fluffy bread', '🍞'],
+        [11, 'Decorated a strawberry cake', '🍰'],
+        [13, 'Sold {n} cookies to the neighbours', '🍪'],
+        [15, 'Taught a little bunny to make buns', '🐰'],
+        [18, 'Packed the leftover bread for tomorrow', '🧺'],
+      ],
+    },
+    {
+      id: 'bartender', name: 'Mocktail mixer', icon: '🍹', place: 'juice bar',
+      hat: { slot: 'body', dx: 6, dy: 11, colors: { k: '#2a2230', r: '#d4634f' }, rows: ['k..k', 'krrk', 'k..k'] },
+      prop: { dx: 13, dy: 8, colors: { s: '#c9ced6', h: '#eef1f5' }, rows: ['.s.', 'shs', 'shs', 'sss'] },
+      shelf: (ctx) => {
+        const bottles = ['#7fb86a', '#e8927c', '#7fa7e8', '#f3c24a', '#c98bd6'];
+        bottles.forEach((c, i) => {
+          const x = 107 + i * 6;
+          rect(ctx, c, x, 30, 3, 5);
+          rect(ctx, c, x + 1, 28, 1, 2);
+          rect(ctx, '#fff8f0', x, 31, 1, 2);
+        });
+      },
+      work: [
+        [11, 'Polished every glass until it sparkled', '✨'],
+        [13, 'Invented a new fruity mocktail', '🍓'],
+        [15, 'Shook {n} lemonades', '🍋'],
+        [17, 'Mixed a sunset punch for the regulars', '🌇'],
+        [19, 'Played calm music for the customers', '🎶'],
+        [21, 'Stacked the stools and said goodnight', '🌙'],
+      ],
+    },
+    {
+      id: 'florist', name: 'Florist', icon: '💐', place: 'flower shop',
+      hat: { slot: 'head', dx: 3, dy: 3, colors: { p: '#ff8fb5', y: '#ffd24a', g: '#7fa33f' }, rows: ['pgygpgygpg'] },
+      prop: { dx: 12, dy: 9, colors: { p: '#ff8fb5', r: '#e8364f', g: '#7fa33f' }, rows: ['prp', 'rpr', '.g.', '.g.'] },
+      shelf: (ctx) => {
+        const petals = ['#ff8fb5', '#ffd24a', '#e8364f', '#c98bd6'];
+        petals.forEach((c, i) => {
+          const x = 107 + i * 8;
+          rect(ctx, '#d67b5a', x, 33, 4, 2);
+          rect(ctx, '#7fa33f', x + 1, 30, 1, 3);
+          rect(ctx, c, x, 28, 3, 2);
+        });
+      },
+      work: [
+        [7, 'Watered all the flowers', '🌷'],
+        [9, 'Made {n} bouquets for the morning orders', '💐'],
+        [11, 'Planted sunflower seeds', '🌻'],
+        [13, 'Delivered roses to the café next door', '🌹'],
+        [15, 'Wove a flower crown for a friend', '👑'],
+        [17, 'Swept up the fallen petals', '🍃'],
+      ],
+    },
+    {
+      id: 'librarian', name: 'Librarian', icon: '📚', place: 'book café',
+      hat: { slot: 'face', dx: 2, dy: 6, colors: { o: '#7a5548' }, rows: ['.ooo....ooo.', '.o.oooooo.o.', '.ooo....ooo.'] },
+      prop: { dx: 13, dy: 10, colors: { b: '#6c8fd6', w: '#ffffff' }, rows: ['bbb', 'bwb', 'bbb'] },
+      shelf: (ctx) => {
+        const books = ['#d4634f', '#6c8fd6', '#7fb86a', '#f3c24a', '#c98bd6', '#e8927c', '#6c8fd6', '#d4634f'];
+        books.forEach((c, i) => rect(ctx, c, 107 + i * 3 + (i > 3 ? 4 : 0), 29 + (i % 3 === 1 ? 1 : 0), 2, 6 - (i % 3 === 1 ? 1 : 0)));
+      },
+      work: [
+        [8, 'Opened the library doors', '🚪'],
+        [10, 'Sorted {n} books back onto the shelves', '📚'],
+        [12, 'Read a story to the little chicks', '🐥'],
+        [14, 'Found a lost bookmark and returned it', '🔖'],
+        [16, 'Recommended {n} books to visitors', '📖'],
+        [18, 'Dusted the cosy reading corner', '🛋️'],
+      ],
+    },
+  ];
+  const ROLE_BY_ID = Object.fromEntries(ROLES.map((r) => [r.id, r]));
+
   // ---------- little sprites for effects ----------
 
   const SPRITES = {
@@ -177,7 +287,9 @@ const Pixel = (() => {
     });
   }
 
-  // look: { species, equipped: {slot: id}, mood: happy|ok|sad|hungry, sleeping, eating }
+  const PAW = { rows: ['.oo.', 'obbo', 'obbo', '.oo.'] };
+
+  // look: { species, equipped: {slot: id}, role, mood: happy|ok|sad|hungry, sleeping, eating, wave }
   function drawPet(ctx, x, y, look) {
     const ch = CHAR_BY_ID[look.species] || CHARACTERS[0];
     const colors = { o: OUTLINE, e: EYE, ...ch.colors };
@@ -207,9 +319,18 @@ const Pixel = (() => {
       else { px(7, 0); px(8, 0); }
     }
 
+    const role = ROLE_BY_ID[look.role];
+    if (role && !look.equipped?.[role.hat.slot]) drawSprite(ctx, role.hat, x + role.hat.dx, y + role.hat.dy);
     for (const slot of SLOT_ORDER) {
       const acc = ACC_BY_ID[look.equipped?.[slot]];
       if (acc) drawSprite(ctx, acc, x + acc.dx, y + acc.dy);
+    }
+    if (look.wave != null) {
+      // paw waving hello beside the head, swapping between two spots
+      const up = look.wave % 2 === 0;
+      drawSprite(ctx, PAW, x + (up ? 13 : 14), y + (up ? 3 : 6), { b: colors.b });
+    } else if (role) {
+      drawSprite(ctx, role.prop, x + role.prop.dx, y + role.prop.dy);
     }
   }
 
@@ -305,7 +426,7 @@ const Pixel = (() => {
     }
   }
 
-  function drawShop(ctx, skyId) {
+  function drawShop(ctx, skyId, roleId) {
     const glass = (SKIES[skyId] || SKIES.day).glass;
     // rooftop rail
     rect(ctx, '#fffaf0', 95, 13, 52, 1);
@@ -328,6 +449,7 @@ const Pixel = (() => {
     }
     rect(ctx, '#c98b6b', 108, 35, 8, 1);
     rect(ctx, '#c98b6b', 124, 35, 8, 1);
+    ROLE_BY_ID[roleId]?.shelf(ctx);
     // awning
     for (let r = 0; r < 9; r++) {
       const y = 40 + r;
@@ -464,7 +586,7 @@ const Pixel = (() => {
   };
 
   // Everything that doesn't move, drawn once and reused until the decor changes.
-  function buildStreet(decor, skyId) {
+  function buildStreet(decor, skyId, roleId) {
     const c = document.createElement('canvas');
     c.width = W;
     c.height = H;
@@ -472,7 +594,7 @@ const Pixel = (() => {
     const has = (id) => decor.includes(id);
     drawBushes(ctx);
     if (has('tree')) DECOR_DRAW.tree(ctx);
-    drawShop(ctx, skyId);
+    drawShop(ctx, skyId, roleId);
     if (has('roof')) DECOR_DRAW.roof(ctx);
     drawHedge(ctx, 95, 147);
     drawGround(ctx);
@@ -496,7 +618,7 @@ const Pixel = (() => {
   }
 
   return {
-    W, H, CHARACTERS, CHAR_BY_ID, ACCESSORIES, ACC_BY_ID, SPRITES, DECOR, BACKGROUNDS,
+    W, H, CHARACTERS, CHAR_BY_ID, ACCESSORIES, ACC_BY_ID, SPRITES, DECOR, BACKGROUNDS, ROLES, ROLE_BY_ID,
     drawSprite, drawPet, drawSky, buildStreet, drawBird,
   };
 })();
