@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Daily Reminders</title>
   <meta name="theme-color" content="#d4634f">
   <link rel="manifest" href="manifest.json">
@@ -13,30 +13,141 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>Daily Reminders</h1>
-      <p id="today-label" class="muted"></p>
-    </div>
-    <div class="top-actions">
+  <div class="app">
+    <header class="topbar">
+      <div class="hi">
+        <h1 id="hello">Hi there! ☀️</h1>
+        <p id="today-label" class="muted"></p>
+      </div>
       <button id="coin-pill" class="coin-pill" type="button" aria-label="Coins, open your pet">🪙 <span id="coin-count">0</span></button>
-      <button id="notify-btn" class="btn ghost" type="button">Turn on notifications</button>
-    </div>
-  </header>
+      <button id="music-btn" class="icon-btn" type="button" aria-label="Mute music" aria-pressed="false">🔊</button>
+      <button id="settings-btn" class="icon-btn" type="button" aria-label="Settings">⚙️</button>
+    </header>
 
-  <div id="greeting" class="greeting-wrap" aria-live="polite"></div>
-  <div id="alerts" class="alerts" aria-live="assertive"></div>
+    <div id="alerts" class="alerts" aria-live="assertive"></div>
 
-  <main class="layout">
-    <nav class="tabs" role="tablist">
-      <button class="tab active" data-tab="tasks" role="tab" type="button">📝 Tasks</button>
-      <button class="tab side-active" data-tab="pet" role="tab" type="button">🐹 Pet</button>
-      <button class="tab" data-tab="notes" role="tab" type="button">📖 Notes</button>
+    <main>
+      <section id="panel-home" class="panel active" aria-label="Home">
+        <div id="greeting" aria-live="polite"></div>
+
+        <div class="card petcard">
+          <canvas id="home-scene" class="scene-canvas zoom" width="112" height="63" aria-label="Your buddy at the café. Tap to pat."></canvas>
+          <p class="speech pet-speech"></p>
+          <div class="meters">
+            <span aria-hidden="true">🍙</span>
+            <div class="bar" role="progressbar" aria-label="Fullness" aria-valuemin="0" aria-valuemax="100"><span class="bar-hunger"></span></div>
+            <span aria-hidden="true">💗</span>
+            <div class="bar happy" role="progressbar" aria-label="Happiness" aria-valuemin="0" aria-valuemax="100"><span class="bar-happy"></span></div>
+          </div>
+        </div>
+
+        <div class="today-head">
+          <h2>Today's tasks</h2>
+          <span id="today-count" class="muted small"></span>
+        </div>
+        <div class="progress" aria-hidden="true"><b id="today-progress"></b></div>
+        <div id="home-tasks"></div>
+      </section>
+
+      <section id="panel-tasks" class="panel" aria-label="Calendar and all tasks">
+        <div class="summary card">
+          <div><strong id="stat-left">0</strong><span>left today</span></div>
+          <div><strong id="stat-done">0</strong><span>done today</span></div>
+          <div><strong id="stat-streak">0</strong><span>day note streak</span></div>
+        </div>
+
+        <div class="view-toggle" role="group" aria-label="Task view">
+          <button class="btn small view-btn" data-taskview="cal" type="button">📅 Calendar</button>
+          <button class="btn small view-btn" data-taskview="list" type="button">📋 All tasks</button>
+        </div>
+        <div id="calendar" class="card calendar" hidden></div>
+        <div id="task-groups"></div>
+      </section>
+
+      <section id="panel-pet" class="panel" aria-label="Your pet">
+        <div class="card scene-card">
+          <canvas id="scene" class="scene-canvas" width="160" height="90" aria-label="Your pet's café street. Tap to pat."></canvas>
+          <p class="speech pet-speech"></p>
+          <div class="pet-buttons">
+            <button type="button" data-act="feed"><span class="nub"></span>Feed</button>
+            <button type="button" data-act="pat"><span class="nub"></span>Pat</button>
+            <button type="button" data-act="play"><span class="nub"></span>Play</button>
+            <button type="button" data-act="ask"><span class="nub ask"></span>My day?</button>
+          </div>
+        </div>
+
+        <div id="pet-report" class="card report" hidden></div>
+
+        <div class="card pet-stats">
+          <div class="pet-title">
+            <strong id="pet-name">Hammy</strong>
+            <span id="pet-level" class="muted small"></span>
+          </div>
+          <div class="stat">
+            <span>🍙 Full</span>
+            <div class="bar" role="progressbar" aria-label="Fullness" aria-valuemin="0" aria-valuemax="100"><span class="bar-hunger"></span></div>
+          </div>
+          <div class="stat">
+            <span>💗 Happy</span>
+            <div class="bar happy" role="progressbar" aria-label="Happiness" aria-valuemin="0" aria-valuemax="100"><span class="bar-happy"></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="subtabs">
+            <button class="subtab active" data-view="shop" type="button">🛒 Shop</button>
+            <button class="subtab" data-view="bag" type="button">🎒 Bag</button>
+            <button class="subtab" data-view="style" type="button">🎀 Customize</button>
+          </div>
+          <div id="pet-view"></div>
+        </div>
+      </section>
+
+      <section id="panel-notes" class="panel" aria-label="Daily notes">
+        <div class="card">
+          <div class="date-nav">
+            <button id="prev-day" class="btn ghost icon" type="button" aria-label="Previous day">‹</button>
+            <input id="note-date" type="date" aria-label="Note date">
+            <button id="next-day" class="btn ghost icon" type="button" aria-label="Next day">›</button>
+            <button id="go-today" class="btn ghost" type="button">Today</button>
+          </div>
+
+          <h3>What I got done</h3>
+          <ul id="done-that-day" class="done-list"></ul>
+
+          <h3>What I learned</h3>
+          <textarea id="note-text" rows="8" placeholder="Write down what you learned today, what went well, and what to try tomorrow…"></textarea>
+          <p id="save-status" class="muted small">&nbsp;</p>
+        </div>
+
+        <div class="card">
+          <div class="history-head">
+            <h3>Past notes</h3>
+            <input id="note-search" type="search" placeholder="Search notes" aria-label="Search notes">
+          </div>
+          <ul id="note-history" class="history"></ul>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main">
+      <button class="nav-btn active" data-tab="home" type="button"><i aria-hidden="true">🏠</i>Home</button>
+      <button class="nav-btn" data-tab="tasks" type="button"><i aria-hidden="true">📅</i>Calendar</button>
+      <button id="add-btn" class="nav-add" type="button"><b aria-hidden="true">+</b>Add</button>
+      <button class="nav-btn" data-tab="pet" type="button"><i aria-hidden="true">🐹</i>Pet</button>
+      <button class="nav-btn" data-tab="notes" type="button"><i aria-hidden="true">📖</i>Notes</button>
     </nav>
+  </div>
 
-    <section id="panel-tasks" class="panel active" aria-label="Tasks">
-      <form id="task-form" class="card add-form">
-        <input id="task-title" type="text" placeholder="What do you need to do?" required maxlength="200" autocomplete="off">
+  <!-- add a task -->
+  <div id="add-sheet" class="sheet" hidden>
+    <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <div class="sheet-head">
+        <h2 id="add-title">New task</h2>
+        <button class="icon-btn sheet-close" type="button" data-close aria-label="Close">✕</button>
+      </div>
+      <form id="task-form" class="add-form">
+        <input id="task-title" type="text" placeholder="What do you need to do?" required maxlength="200" autocomplete="off" aria-label="Task">
         <div class="row">
           <label>Date
             <input id="task-date" type="date" required>
@@ -63,120 +174,69 @@
           <legend>Remind me</legend>
           <div id="task-alerts" class="chips"></div>
         </fieldset>
-        <div class="row end">
-          <button class="btn primary" type="submit">Add task</button>
-        </div>
+        <button class="btn primary wide" type="submit">Add task</button>
       </form>
-
-      <details id="settings" class="card settings">
-        <summary>🔔 Reminder settings</summary>
-        <h3>Remind me by default</h3>
-        <div id="default-alerts" class="chips"></div>
-        <h3>Daily messages from your buddy</h3>
-        <div class="setting-row">
-          <label class="switch"><input id="morning-on" type="checkbox"> ☀️ Morning plan: today's tasks</label>
-          <input id="morning-time" type="time" aria-label="Morning message time">
-        </div>
-        <div class="setting-row">
-          <label class="switch"><input id="evening-on" type="checkbox"> 🌙 Evening check-in: how the day went</label>
-          <input id="evening-time" type="time" aria-label="Evening message time">
-        </div>
-        <button id="test-notify" class="btn small" type="button">Send a test reminder</button>
-      </details>
-
-      <div class="summary card">
-        <div><strong id="stat-left">0</strong><span>left today</span></div>
-        <div><strong id="stat-done">0</strong><span>done today</span></div>
-        <div><strong id="stat-streak">0</strong><span>day note streak</span></div>
-      </div>
-
-      <div class="view-toggle" role="group" aria-label="Task view">
-        <button class="btn small view-btn on" data-taskview="list" type="button">📋 List</button>
-        <button class="btn small view-btn" data-taskview="cal" type="button">📅 Calendar</button>
-      </div>
-      <div id="task-groups"></div>
-      <div id="calendar" class="card calendar" hidden></div>
-    </section>
-
-    <div class="side">
-      <section id="panel-pet" class="panel side-active" aria-label="Your pet">
-        <div class="card scene-card">
-          <canvas id="scene" width="160" height="90" aria-label="Your pet's café street. Click to pat."></canvas>
-          <p id="pet-speech" class="speech"></p>
-          <div class="pet-buttons">
-            <button type="button" data-act="feed"><span class="nub"></span>Feed</button>
-            <button type="button" data-act="pat"><span class="nub"></span>Pat</button>
-            <button type="button" data-act="play"><span class="nub"></span>Play</button>
-            <button type="button" data-act="ask"><span class="nub ask"></span>My day?</button>
-          </div>
-        </div>
-
-        <div id="pet-report" class="card report" hidden></div>
-
-        <div class="card pet-stats">
-          <div class="pet-title">
-            <strong id="pet-name">Hammy</strong>
-            <span id="pet-level" class="muted small"></span>
-          </div>
-          <div class="stat">
-            <span>🍙 Full</span>
-            <div class="bar" role="progressbar" aria-label="Fullness" aria-valuemin="0" aria-valuemax="100"><span id="bar-hunger"></span></div>
-          </div>
-          <div class="stat">
-            <span>💗 Happy</span>
-            <div class="bar happy" role="progressbar" aria-label="Happiness" aria-valuemin="0" aria-valuemax="100"><span id="bar-happy"></span></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="subtabs">
-            <button class="subtab active" data-view="shop" type="button">🛒 Shop</button>
-            <button class="subtab" data-view="bag" type="button">🎒 Bag</button>
-            <button class="subtab" data-view="style" type="button">🎀 Customize</button>
-          </div>
-          <div id="pet-view"></div>
-        </div>
-      </section>
-
-      <section id="panel-notes" class="panel" aria-label="Daily notes">
-        <div class="card">
-          <div class="date-nav">
-            <button id="prev-day" class="btn ghost icon" type="button" aria-label="Previous day">‹</button>
-            <input id="note-date" type="date">
-            <button id="next-day" class="btn ghost icon" type="button" aria-label="Next day">›</button>
-            <button id="go-today" class="btn ghost" type="button">Today</button>
-          </div>
-
-          <h3>What I got done</h3>
-          <ul id="done-that-day" class="done-list"></ul>
-
-          <h3>What I learned</h3>
-          <textarea id="note-text" rows="8" placeholder="Write down what you learned today, what went well, and what to try tomorrow…"></textarea>
-          <p id="save-status" class="muted small">&nbsp;</p>
-        </div>
-
-        <div class="card">
-          <div class="history-head">
-            <h3>Past notes</h3>
-            <input id="note-search" type="search" placeholder="Search notes">
-          </div>
-          <ul id="note-history" class="history"></ul>
-        </div>
-      </section>
     </div>
-  </main>
+  </div>
 
-  <footer class="footer">
-    <button id="export-btn" class="btn ghost" type="button">Export backup</button>
-    <button id="copy-btn" class="btn ghost" type="button">Copy backup</button>
-    <label class="btn ghost">Import backup<input id="import-file" type="file" accept="application/json" hidden></label>
-    <p class="muted small">Your data is saved in this browser only. Keep this page open (a background tab is fine) to get reminders.</p>
-  </footer>
+  <!-- settings -->
+  <div id="settings-sheet" class="sheet" hidden>
+    <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="icon-btn sheet-close" type="button" data-close aria-label="Close">✕</button>
+      </div>
+
+      <h3>You</h3>
+      <label class="field">What should your buddy call you?
+        <input id="user-name" type="text" maxlength="24" placeholder="Your name" autocomplete="given-name">
+      </label>
+
+      <h3>Look</h3>
+      <div id="theme-cards" class="theme-cards"></div>
+
+      <h3>Sound</h3>
+      <div class="setting-row">
+        <label class="switch"><input id="music-on" type="checkbox"> 🎵 Background music</label>
+        <span class="muted small">Island Life by day, Peep the Pet at night</span>
+      </div>
+
+      <h3>Reminders</h3>
+      <div class="setting-row">
+        <span class="switch">🔔 Pop-up notifications</span>
+        <button id="notify-btn" class="btn small" type="button">Turn on</button>
+      </div>
+      <div class="setting-row">
+        <label class="switch"><input id="morning-on" type="checkbox"> ☀️ Morning plan</label>
+        <input id="morning-time" type="time" aria-label="Morning message time">
+      </div>
+      <div class="setting-row">
+        <label class="switch"><input id="evening-on" type="checkbox"> 🌙 Evening check-in</label>
+        <input id="evening-time" type="time" aria-label="Evening message time">
+      </div>
+      <p class="muted small field-label">Remind me before tasks (default)</p>
+      <div id="default-alerts" class="chips"></div>
+      <button id="test-notify" class="btn small" type="button">Send a test reminder</button>
+
+      <h3>Backup</h3>
+      <div class="backup-row">
+        <button id="export-btn" class="btn small" type="button">Export backup</button>
+        <button id="copy-btn" class="btn small" type="button">Copy backup</button>
+        <label class="btn small">Import backup<input id="import-file" type="file" accept="application/json" hidden></label>
+      </div>
+      <p class="muted small">Your data is saved in this browser only. Keep the app open (a background tab is fine) to get reminders.</p>
+      <button id="rerun-setup" class="btn small ghost" type="button">Run the welcome setup again</button>
+    </div>
+  </div>
+
+  <!-- first-time setup -->
+  <div id="onboarding" class="onboarding" hidden></div>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
 
   <script src="pixel.js"></script>
   <script src="pet.js"></script>
+  <script src="music.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

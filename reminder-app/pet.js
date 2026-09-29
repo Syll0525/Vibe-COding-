@@ -34,6 +34,7 @@ const Pet = (() => {
   let persist;
   let toast;
   let getProgress = () => ({ doneToday: 0, leftToday: 0, overdue: 0, next: null, streak: 0 });
+  let getUserName = () => '';
   const pet = () => getState().pet;
 
   function fresh() {
@@ -132,8 +133,8 @@ const Pet = (() => {
   }
 
   function renderSpeech() {
-    const el = $('#pet-speech');
-    if (!el) return;
+    const els = document.querySelectorAll('.pet-speech');
+    if (!els.length) return;
     const p = pet();
     let text;
     if (speech && Date.now() < speechUntil) text = speech;
@@ -147,7 +148,7 @@ const Pet = (() => {
       }[mood(p)];
       text = lines[Math.floor(Date.now() / 60000) % lines.length];
     }
-    el.textContent = text;
+    els.forEach((e) => { e.textContent = text; });
   }
 
   // ---------- actions ----------
@@ -246,7 +247,9 @@ const Pet = (() => {
 
   // ---------- scene animation ----------
 
-  const canvas = () => $('#scene');
+  const stage = document.createElement('canvas');
+  stage.width = Pixel.W;
+  stage.height = Pixel.H;
   let street = null;
   let streetKey = '';
   let t = 0;
@@ -264,9 +267,9 @@ const Pet = (() => {
   }
 
   function frame() {
-    const c = canvas();
-    if (!c || !c.offsetParent) return; // hidden tab: skip drawing
-    const ctx = c.getContext('2d');
+    const targets = [...document.querySelectorAll('.scene-canvas')].filter((c) => c.offsetParent);
+    if (!targets.length) return; // nothing on screen: skip drawing
+    const ctx = stage.getContext('2d');
     const p = pet();
     const now = Date.now();
     effects = effects.filter((e) => e.until > now);
@@ -332,7 +335,19 @@ const Pet = (() => {
       ctx.fillRect(x + 15, y + 1, 1, 3);
       ctx.fillRect(x + 15, y + 5, 1, 1);
     }
+
+    // Full street for the Pet tab; zoomed canvases follow the pet like a camera.
+    for (const c of targets) {
+      const out = c.getContext('2d');
+      if (c.classList.contains('zoom')) {
+        camX += (Math.max(0, Math.min(Pixel.W - c.width, x + 8 - c.width / 2)) - camX) * 0.15;
+        out.drawImage(stage, Math.round(camX), Pixel.H - c.height, c.width, c.height, 0, 0, c.width, c.height);
+      } else {
+        out.drawImage(stage, 0, 0);
+      }
+    }
   }
+  let camX = 20;
 
   // ---------- greeting ----------
 
@@ -393,7 +408,7 @@ const Pet = (() => {
     greetTimer = setInterval(draw, 350);
 
     const body = el('div', { class: 'greet-body' },
-      el('strong', { class: 'greet-title' }, `Hi! 👋 ${hello()}!`),
+      el('strong', { class: 'greet-title' }, `Hi${getUserName() ? ` ${getUserName()}` : ''}! 👋 ${hello()}!`),
       el('p', {}, encourage()));
     const answered = p.moods[today];
     if (answered) {
@@ -654,10 +669,12 @@ const Pet = (() => {
     $('#coin-count').textContent = p.coins;
     $('#pet-name').textContent = p.name;
     $('#pet-level').textContent = `Lv ${level(p)} ${roleOf(p).icon} ${roleOf(p).name} · ${plural(p.tasksDone, 'task')} done`;
-    $('#bar-hunger').style.width = `${p.hunger}%`;
-    $('#bar-happy').style.width = `${p.happy}%`;
-    $('#bar-hunger').parentElement.setAttribute('aria-valuenow', Math.round(p.hunger));
-    $('#bar-happy').parentElement.setAttribute('aria-valuenow', Math.round(p.happy));
+    for (const [cls, value] of [['.bar-hunger', p.hunger], ['.bar-happy', p.happy]]) {
+      document.querySelectorAll(cls).forEach((b) => {
+        b.style.width = `${value}%`;
+        b.parentElement.setAttribute('aria-valuenow', Math.round(value));
+      });
+    }
     renderSpeech();
     renderView();
     renderReport();
@@ -666,11 +683,12 @@ const Pet = (() => {
   function init(opts) {
     ({ getState, save: persist, toast } = opts);
     if (opts.getProgress) getProgress = opts.getProgress;
+    if (opts.getUserName) getUserName = opts.getUserName;
     document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => {
       ({ feed: () => feed(), pat, play, ask: () => openReport() })[b.dataset.act]();
     }));
     document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => showView(b.dataset.view)));
-    $('#scene').addEventListener('click', pat);
+    document.querySelectorAll('.scene-canvas').forEach((c) => c.addEventListener('click', pat));
     setInterval(frame, 120);
     setInterval(() => { decay(pet()); persist(); render(); }, 60 * 1000);
     render();

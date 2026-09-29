@@ -2,6 +2,9 @@
 
 A small reminder app that runs in your browser. No install, no account, no server.
 
+- **Welcome setup.** The first time you open the app, 3 quick steps: pick your buddy, name it (🎲 suggests one) and choose its job, then your name, ☀️ light / 🌙 dark / 📱 auto look, music, and when to be reminded. Run it again any time from ⚙️ Settings.
+- **Home page.** Just your buddy (the café camera follows it around) and today's to-do list with a progress bar. The next task is highlighted. The bottom bar has 🏠 Home, 📅 Calendar, ＋ Add, 🐹 Pet and 📖 Notes.
+- **Music.** *Island Life* plays in light mode and *Peep the Pet* in dark mode, fading between them. Tap 🔊 at the top right to mute or unmute. Browsers only allow music after your first tap, so it starts then.
 - **Reminders.** Add a task with a date, time and optional **location** (📍 shown on the task and in the notification, with a link to open it in maps). When it's due you get a desktop/phone notification, a chime, and a banner in the app with **Done** and **Snooze 10 min** buttons.
 - **Repeats.** Tasks can be once, every day, weekdays only, or every week. Ticking a repeating task schedules the next one.
 - **Tick off tasks.** Tasks are grouped into Overdue, Today, Upcoming and Done today.

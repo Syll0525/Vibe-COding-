@@ -76,6 +76,7 @@ function load() {
 function upgrade(data) {
   Pet.ensure(data);
   const s = data.settings || {};
+  data.profile = { setupDone: false, userName: '', theme: 'auto', music: true, ...data.profile };
   data.settings = {
     ...DEFAULT_SETTINGS, ...s,
     morning: { ...DEFAULT_SETTINGS.morning, ...s.morning },
@@ -111,7 +112,7 @@ function save() {
   } catch { /* storage blocked (private window): keep working in memory */ }
 }
 
-Pet.init({ getState: () => state, save, toast, getProgress: progress });
+Pet.init({ getState: () => state, save, toast, getProgress: progress, getUserName: () => state.profile.userName });
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const findTask = (id) => state.tasks.find((t) => t.id === id);
@@ -184,27 +185,30 @@ function handleAction(msg) {
 
 function updateNotifyButton() {
   const btn = $('#notify-btn');
-  if (!('Notification' in window)) {
-    btn.textContent = 'Notifications not supported';
-    btn.disabled = true;
-  } else if (Notification.permission === 'granted') {
-    btn.textContent = '🔔 Notifications on';
-    btn.classList.add('on');
-  } else if (Notification.permission === 'denied') {
-    btn.textContent = 'Notifications blocked';
-    btn.title = 'Allow notifications for this site in your browser settings';
-  } else {
-    btn.textContent = 'Turn on notifications';
+  const status = notifyStatus();
+  for (const b of [btn, document.getElementById('ob-notify')].filter(Boolean)) {
+    b.textContent = status.label;
+    b.disabled = status.disabled;
+    b.title = status.title || '';
+    b.classList.toggle('on', status.on);
   }
 }
 
-$('#notify-btn').addEventListener('click', async () => {
+function notifyStatus() {
+  if (!('Notification' in window)) return { label: 'Not available here', disabled: true };
+  if (Notification.permission === 'granted') return { label: 'On ✓', disabled: true, on: true };
+  if (Notification.permission === 'denied') return { label: 'Blocked', disabled: true, title: 'Allow notifications for this site in your browser settings' };
+  return { label: 'Turn on', disabled: false };
+}
+
+async function askNotify() {
   if ('Notification' in window && Notification.permission === 'default') {
-    await Notification.requestPermission();
+    try { await Notification.requestPermission(); } catch { /* refused by the page's frame */ }
   }
   updateNotifyButton();
-  unlockAudio();
-});
+}
+
+$('#notify-btn').addEventListener('click', () => { unlockAudio(); askNotify(); });
 
 let audioCtx = null;
 function unlockAudio() {
@@ -525,7 +529,7 @@ function progress() {
 
 // ---------- calendar ----------
 
-let taskView = 'list';
+let taskView = 'cal';
 let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let calDay = todayKey();
 
@@ -582,11 +586,7 @@ function renderCalendar() {
   if (calDay >= today) {
     dayBox.append(el('button', {
       type: 'button', className: 'btn small',
-      onclick: () => {
-        $('#task-date').value = calDay;
-        $('#task-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        $('#task-title').focus({ preventScroll: true });
-      },
+      onclick: () => openAdd(calDay),
     }, '＋ Add a task on this day'));
   }
   box.replaceChildren(head, grid, dayBox);
@@ -710,25 +710,88 @@ $('#next-day').addEventListener('click', () => openNoteDay(shiftDay(noteDay, 1))
 $('#go-today').addEventListener('click', () => openNoteDay(todayKey()));
 $('#note-search').addEventListener('input', renderHistory);
 
-// ---------- tabs ----------
+// ---------- navigation ----------
 
-// Phones show one panel at a time. Wide screens always show Tasks and pick Pet or Notes beside it.
-let sideTab = 'pet';
 function showTab(name) {
-  if (name !== 'tasks') sideTab = name;
-  document.querySelectorAll('.tab').forEach((t) => {
-    t.classList.toggle('active', t.dataset.tab === name);
-    t.classList.toggle('side-active', t.dataset.tab === sideTab);
+  document.querySelectorAll('.nav-btn').forEach((b) => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
   });
-  document.querySelectorAll('.panel').forEach((p) => {
-    p.classList.toggle('active', p.id === `panel-${name}`);
-    p.classList.toggle('side-active', p.id === `panel-${sideTab}`);
-  });
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === `panel-${name}`));
+  window.scrollTo({ top: 0 });
 }
-$('#coin-pill').addEventListener('click', () => {
-  showTab('pet');
-  $('#panel-pet').scrollIntoView({ behavior: 'smooth', block: 'start' });
+document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+$('#coin-pill').addEventListener('click', () => showTab('pet'));
+
+// ---------- sheets (add task, settings) ----------
+
+function openSheet(sheet) {
+  sheet.hidden = false;
+  document.body.classList.add('sheet-open');
+}
+function closeSheet(sheet) {
+  sheet.hidden = true;
+  if (!document.querySelector('.sheet:not([hidden]), .onboarding:not([hidden])')) document.body.classList.remove('sheet-open');
+}
+document.querySelectorAll('.sheet').forEach((sheet) => sheet.addEventListener('click', (e) => {
+  if (e.target === sheet || e.target.closest('[data-close]')) closeSheet(sheet);
+}));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') document.querySelectorAll('.sheet:not([hidden])').forEach(closeSheet);
 });
+
+function openAdd(date) {
+  resetForm();
+  if (date) $('#task-date').value = date;
+  openSheet($('#add-sheet'));
+  $('#task-title').focus();
+}
+$('#add-btn').addEventListener('click', () => openAdd());
+$('#settings-btn').addEventListener('click', () => {
+  renderSettings();
+  openSheet($('#settings-sheet'));
+});
+
+// ---------- look and music ----------
+
+const THEMES = [
+  { id: 'light', icon: '☀️', label: 'Light' },
+  { id: 'dark', icon: '🌙', label: 'Dark' },
+  { id: 'auto', icon: '📱', label: 'Auto' },
+];
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const isDark = () => state.profile.theme === 'dark' || (state.profile.theme === 'auto' && darkQuery.matches);
+
+function applyLook() {
+  const theme = state.profile.theme;
+  if (theme === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+  Music.setMode(isDark() ? 'night' : 'day');
+  Music.setEnabled(state.profile.music);
+  const btn = $('#music-btn');
+  btn.textContent = state.profile.music ? '🔊' : '🔇';
+  btn.setAttribute('aria-label', state.profile.music ? 'Mute music' : 'Play music');
+  btn.setAttribute('aria-pressed', String(!state.profile.music));
+  $('#music-on').checked = state.profile.music;
+}
+darkQuery.addEventListener('change', applyLook);
+
+$('#music-btn').addEventListener('click', () => {
+  state.profile.music = !state.profile.music;
+  save();
+  applyLook();
+  Music.unlock();
+  toast(state.profile.music ? `🎵 Music on: ${isDark() ? 'Peep the Pet' : 'Island Life'}` : '🔇 Music off');
+});
+
+function themeCards(container, current, onPick) {
+  container.replaceChildren(...THEMES.map((t) => el('button', {
+    type: 'button', className: 'theme' + (t.id === current ? ' on' : ''), ariaPressed: String(t.id === current),
+    onclick: () => onPick(t.id),
+  }, el('span', { className: `mini ${t.id}` }, el('i'), el('i'), el('i')), `${t.icon} ${t.label}`)));
+}
 
 // ---------- toasts ----------
 
@@ -748,7 +811,6 @@ function bumpCoins() {
   void pill.offsetWidth;
   pill.classList.add('bump');
 }
-document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 
 // ---------- add form ----------
 
@@ -787,8 +849,7 @@ $('#task-form').addEventListener('submit', (e) => {
   $('#task-title').value = '';
   $('#task-location').value = '';
   $('#task-repeat').value = 'none';
-  resetForm();
-  $('#task-title').focus();
+  closeSheet($('#add-sheet'));
 });
 
 // ---------- reminder settings ----------
@@ -804,7 +865,32 @@ function renderSettings() {
   $('#morning-time').value = s.morning.time;
   $('#evening-on').checked = s.evening.on;
   $('#evening-time').value = s.evening.time;
+  $('#user-name').value = state.profile.userName;
+  $('#music-on').checked = state.profile.music;
+  themeCards($('#theme-cards'), state.profile.theme, (id) => {
+    state.profile.theme = id;
+    save();
+    applyLook();
+    renderSettings();
+  });
+  updateNotifyButton();
 }
+
+$('#user-name').addEventListener('change', (e) => {
+  state.profile.userName = e.target.value.trim();
+  save();
+  render();
+});
+$('#music-on').addEventListener('change', (e) => {
+  state.profile.music = e.target.checked;
+  save();
+  applyLook();
+  Music.unlock();
+});
+$('#rerun-setup').addEventListener('click', () => {
+  closeSheet($('#settings-sheet'));
+  openOnboarding();
+});
 
 for (const kind of ['morning', 'evening']) {
   $(`#${kind}-on`).addEventListener('change', (e) => { state.settings[kind].on = e.target.checked; save(); });
@@ -859,14 +945,224 @@ $('#import-file').addEventListener('change', async (e) => {
   try {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data.tasks) || typeof data.notes !== 'object') throw new Error('bad file');
-    state = upgrade({ tasks: data.tasks, notes: data.notes || {}, pet: data.pet, settings: data.settings });
+    state = upgrade({ tasks: data.tasks, notes: data.notes || {}, pet: data.pet, settings: data.settings, profile: data.profile });
     save();
+    applyLook();
+    renderSettings();
     render();
     toast('Backup restored');
   } catch {
     toast('That file is not a Daily Reminders backup.');
   }
 });
+
+// ---------- home ----------
+
+function renderHome() {
+  const today = todayKey();
+  const now = new Date();
+  const name = state.profile.userName;
+  const h = now.getHours();
+  $('#hello').textContent = `Hi ${name || 'there'}! ${h >= 6 && h < 18 ? '☀️' : '🌙'}`;
+
+  const open = state.tasks.filter((t) => !t.done && t.due.slice(0, 10) <= today).sort(byDue);
+  const done = state.tasks.filter((t) => doneOn(t, today)).sort((a, b) => a.doneAt.localeCompare(b.doneAt));
+  const total = open.length + done.length;
+  $('#today-count').textContent = total ? `${done.length} of ${total} done${done.length === total ? ' 🎉' : ''}` : '';
+  $('#today-progress').style.width = total ? `${(done.length / total) * 100}%` : '0%';
+
+  const next = open.find((t) => new Date(t.due) >= now);
+  const box = $('#home-tasks');
+  if (!total) {
+    box.replaceChildren(el('div', { className: 'empty-home' },
+      el('p', {}, 'Nothing on your list today.'),
+      el('button', { type: 'button', className: 'btn small primary', onclick: () => openAdd() }, '＋ Add a task')));
+    return;
+  }
+  box.replaceChildren(el('ul', { className: 'task-list' },
+    ...done.map((t) => taskItem(t, { showDay: false })),
+    ...open.map((t) => {
+      const li = taskItem(t, { showDay: t.due.slice(0, 10) < today });
+      if (t === next) {
+        li.classList.add('next');
+        li.querySelector('.task-meta span').textContent += ' · next';
+      }
+      return li;
+    })));
+}
+
+// ---------- first-time setup ----------
+
+const PET_NAMES = ['Mochi', 'Boba', 'Peanut', 'Tofu', 'Maple', 'Biscuit', 'Latte', 'Pudding', 'Sesame', 'Dumpling', 'Honey', 'Kiwi', 'Waffle', 'Bean', 'Sprout'];
+let ob = null;
+let obTimer = null;
+let obStreet = { key: '', canvas: null };
+
+function petThumb(species, role, size = 16) {
+  const c = el('canvas', { className: 'pix', width: size, height: size });
+  Pixel.drawPet(c.getContext('2d'), 0, 0, { species, role, mood: 'happy', equipped: {} });
+  return c;
+}
+
+function drawOnboarding(frame) {
+  document.querySelectorAll('#onboarding canvas[data-ob]').forEach((c) => {
+    const ctx = c.getContext('2d');
+    if (c.dataset.ob === 'wave') {
+      ctx.clearRect(0, 0, c.width, c.height);
+      Pixel.drawPet(ctx, 2, 3, { species: ob.species, role: ob.role, mood: 'happy', wave: frame, equipped: {} });
+      return;
+    }
+    const key = ob.role || '';
+    if (obStreet.key !== key || !obStreet.canvas) obStreet = { key, canvas: Pixel.buildStreet(['umbrella', 'pot'], 'day', ob.role) };
+    const stage = document.createElement('canvas');
+    stage.width = Pixel.W;
+    stage.height = Pixel.H;
+    const s = stage.getContext('2d');
+    Pixel.drawSky(s, 'day', frame * 2);
+    s.drawImage(obStreet.canvas, 0, 0);
+    s.fillStyle = 'rgba(91, 64, 56, 0.18)';
+    s.fillRect(63, 85, 10, 2);
+    Pixel.drawPet(s, 60, 70 - (frame % 2), { species: ob.species, mood: 'happy', wave: frame, equipped: {} });
+    ctx.drawImage(stage, 24, Pixel.H - c.height, c.width, c.height, 0, 0, c.width, c.height);
+  });
+}
+
+function openOnboarding() {
+  const p = state.pet;
+  ob = { step: 1, species: p.species, name: p.name, role: p.role, userName: state.profile.userName };
+  $('#onboarding').hidden = false;
+  document.body.classList.add('sheet-open');
+  renderOnboarding();
+  let frame = 0;
+  clearInterval(obTimer);
+  obTimer = setInterval(() => drawOnboarding(frame++), 300);
+}
+
+function renderOnboarding() {
+  const box = $('#onboarding');
+  const steps = el('div', { className: 'steps' },
+    ...[1, 2, 3].map((i) => el('i', { className: i <= ob.step ? 'on' : '' })),
+    el('span', {}, `Step ${ob.step} of 3`));
+  const body = el('div', { className: 'ob-body' });
+  const go = (step) => { ob.step = step; renderOnboarding(); };
+  let actions;
+
+  if (ob.step === 1) {
+    body.append(
+      el('h2', {}, 'Welcome! 👋'),
+      el('p', { className: 'sub' }, 'Meet your buddy. They live in a little café, cheer you on, and remind you of your tasks.'),
+      el('canvas', { className: 'pix ob-scene', width: 112, height: 63 }),
+      el('h3', {}, 'Choose your buddy'),
+      el('div', { className: 'ob-grid' }, ...Pixel.CHARACTERS.map((ch) => el('button', {
+        type: 'button', className: 'pick' + (ob.species === ch.id ? ' on' : ''), ariaPressed: String(ob.species === ch.id),
+        onclick: () => {
+          const defaultName = !ob.name || Pixel.CHARACTERS.some((c) => c.name === ob.name);
+          ob.species = ch.id;
+          if (defaultName) ob.name = ch.name;
+          renderOnboarding();
+        },
+      }, petThumb(ch.id, null), el('span', {}, ch.name), el('small', {}, ch.kind)))));
+    body.querySelector('.ob-scene').dataset.ob = 'scene';
+    actions = [el('button', { type: 'button', className: 'btn primary', onclick: () => go(2) }, 'Next →')];
+  } else if (ob.step === 2) {
+    const nameInput = el('input', { type: 'text', id: 'ob-name', maxLength: 16, value: ob.name, autocomplete: 'off' });
+    nameInput.addEventListener('input', () => { ob.name = nameInput.value; });
+    const dice = el('button', {
+      type: 'button', className: 'icon-btn', ariaLabel: 'Suggest a name',
+      onclick: () => {
+        const options = PET_NAMES.filter((n) => n !== ob.name);
+        ob.name = options[Math.floor(Math.random() * options.length)];
+        nameInput.value = ob.name;
+      },
+    }, '🎲');
+    const wave = el('canvas', { className: 'pix ob-wave', width: 20, height: 20 });
+    wave.dataset.ob = 'wave';
+    body.append(
+      el('h2', {}, 'Give them a name'),
+      el('div', { className: 'ob-hero' }, wave),
+      el('label', { className: 'field', htmlFor: 'ob-name' }, 'Name'),
+      el('div', { className: 'name-row' }, nameInput, dice),
+      el('h3', {}, 'Pick a job'),
+      el('div', { className: 'ob-grid' }, ...Pixel.ROLES.map((r) => el('button', {
+        type: 'button', className: 'pick' + (ob.role === r.id ? ' on' : ''), ariaPressed: String(ob.role === r.id),
+        onclick: () => { ob.role = r.id; renderOnboarding(); },
+      }, petThumb(ob.species, r.id, 18), el('span', {}, `${r.icon} ${r.name}`)))));
+    actions = [
+      el('button', { type: 'button', className: 'btn back', ariaLabel: 'Back', onclick: () => go(1) }, '←'),
+      el('button', { type: 'button', className: 'btn primary', onclick: () => go(3) }, 'Next →'),
+    ];
+  } else {
+    const s = state.settings;
+    const you = el('input', { type: 'text', id: 'ob-you', maxLength: 24, value: ob.userName, placeholder: 'Your name', autocomplete: 'given-name' });
+    you.addEventListener('input', () => { ob.userName = you.value; });
+    const looks = el('div', { className: 'theme-cards' });
+    const pickLook = (id) => { state.profile.theme = id; applyLook(); themeCards(looks, id, pickLook); };
+    themeCards(looks, state.profile.theme, pickLook);
+    const petName = (ob.name || '').trim() || Pixel.CHAR_BY_ID[ob.species].name;
+    const music = el('input', { type: 'checkbox', id: 'ob-music', checked: state.profile.music });
+    music.addEventListener('change', () => { state.profile.music = music.checked; applyLook(); Music.unlock(); });
+    const timeRow = (kind, label) => {
+      const on = el('input', { type: 'checkbox', checked: s[kind].on });
+      on.addEventListener('change', () => { s[kind].on = on.checked; });
+      const time = el('input', { type: 'time', value: s[kind].time, ariaLabel: `${label} time` });
+      time.addEventListener('change', () => { if (time.value) { s[kind].time = time.value; s.last[kind] = null; } });
+      return el('div', { className: 'setting-row' }, el('label', { className: 'switch' }, on, ` ${label}`), time);
+    };
+    const alerts = el('div', { className: 'chips' });
+    chips(alerts, 'ob-alert', s.defaultAlerts, () => { s.defaultAlerts = checkedMins(alerts); });
+    const notify = el('button', { type: 'button', id: 'ob-notify', className: 'btn small', onclick: askNotify });
+    body.append(
+      el('h2', {}, 'Make it yours'),
+      el('label', { className: 'field', htmlFor: 'ob-you' }, `What should ${petName} call you?`), you,
+      el('h3', {}, 'Look'), looks,
+      el('div', { className: 'card ob-card' },
+        el('div', { className: 'setting-row' }, el('label', { className: 'switch', htmlFor: 'ob-music' }, music, ' 🎵 Background music')),
+        el('div', { className: 'setting-row' }, el('span', { className: 'switch' }, '🔔 Pop-up notifications'), notify),
+        timeRow('morning', '☀️ Morning plan'),
+        timeRow('evening', '🌙 Evening check-in'),
+        el('p', { className: 'muted small field-label' }, 'Remind me before tasks'),
+        alerts));
+    actions = [
+      el('button', { type: 'button', className: 'btn back', ariaLabel: 'Back', onclick: () => go(2) }, '←'),
+      el('button', { type: 'button', className: 'btn primary', onclick: finishOnboarding }, 'Start my day! 🎉'),
+    ];
+  }
+
+  // First visit: Skip keeps the defaults. Re-running from settings: Close leaves everything as it was.
+  const skip = el('button', { type: 'button', className: 'ob-skip', onclick: state.profile.setupDone ? closeOnboarding : finishOnboarding },
+    state.profile.setupDone ? 'Close' : 'Skip');
+  box.replaceChildren(el('div', { className: 'ob-card-wrap' },
+    el('div', { className: 'ob-top' }, steps, skip), body, el('div', { className: 'ob-actions' }, ...actions)));
+  updateNotifyButton();
+  drawOnboarding(0);
+}
+
+function closeOnboarding() {
+  clearInterval(obTimer);
+  $('#onboarding').hidden = true;
+  closeSheet($('#settings-sheet'));
+  applyLook();
+}
+
+function finishOnboarding() {
+  const p = state.pet;
+  p.species = ob.species;
+  p.name = (ob.name || '').trim() || Pixel.CHAR_BY_ID[ob.species].name;
+  p.role = ob.role;
+  state.profile.userName = (ob.userName || '').trim();
+  state.profile.setupDone = true;
+  save();
+  clearInterval(obTimer);
+  $('#onboarding').hidden = true;
+  closeSheet($('#settings-sheet'));
+  resetForm();
+  renderSettings();
+  applyLook();
+  Music.unlock();
+  showTab('home');
+  render();
+  Pet.greet();
+}
 
 // ---------- boot ----------
 
@@ -876,7 +1172,8 @@ function renderLocations() {
 }
 
 function render() {
-  $('#today-label').textContent = fmtLongDay(new Date());
+  $('#today-label').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  renderHome();
   renderTasks();
   renderCalendar();
   renderNotes();
@@ -911,13 +1208,16 @@ if (launch.get('id')) {
 }
 
 updateNotifyButton();
+applyLook();
 render();
 checkReminders();
 
-// The pet says hi every time you open the app, and again when you come back after a while.
-Pet.greet();
+// New visitors set up their buddy first. After that the pet says hi every time
+// you open the app, and again when you come back after a while.
+if (state.profile.setupDone) Pet.greet();
+else openOnboarding();
 let hiddenAt = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) hiddenAt = Date.now();
-  else if (hiddenAt && Date.now() - hiddenAt > GREET_AFTER_MS) Pet.greet();
+  else if (hiddenAt && Date.now() - hiddenAt > GREET_AFTER_MS && state.profile.setupDone) Pet.greet();
 });
