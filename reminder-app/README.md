@@ -1,4 +1,6 @@
-# ⏰ Daily Reminders
+# ⏰ Remi
+
+*Your friend who reminds you.* By Curiosoul_Media, made in Kuching, Sarawak.
 
 A small reminder app that runs in your browser. No install, no account, no server.
 

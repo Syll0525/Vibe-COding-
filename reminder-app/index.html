@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Daily Reminders</title>
+  <title>Remi</title>
+  <meta name="description" content="Remi, your friend who reminds you. A cosy pixel pet that helps with your tasks.">
   <meta name="theme-color" content="#d4634f">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -14,9 +15,10 @@
 </head>
 <body>
   <!-- cover: shown every time the app opens, tap to continue -->
-  <div id="cover" class="cover" role="button" tabindex="0" aria-label="Welcome. Tap to start.">
+  <div id="cover" class="cover" role="button" tabindex="0" aria-label="Welcome to Remi. Tap to start.">
     <img class="cover-art" src="cover.jpg" alt="Crayon drawing of a round orange buddy with a curly antenna and a little door, under a pink sun and a blue cloud" width="1024" height="1024">
-    <h1 class="cover-title">Welcome</h1>
+    <h1 class="cover-title"><span class="cover-welcome">Welcome to</span> Remi</h1>
+    <p class="cover-tagline">your friend who reminds you</p>
     <p class="cover-credit">by Curiosoul_Media · Made in Kuching, Sarawak</p>
     <p class="cover-tap">Tap anywhere to start</p>
   </div>
@@ -24,6 +26,7 @@
   <div class="app">
     <header class="topbar">
       <div class="hi">
+        <p class="brand" aria-label="Remi">Remi<span>your friend who reminds you</span></p>
         <h1 id="hello">Hi there! ☀️</h1>
         <p id="today-label" class="muted"></p>
       </div>
@@ -138,6 +141,8 @@
       </section>
     </main>
 
+    <p class="made-by"><b>Remi</b> · by Curiosoul_Media · Made in Kuching, Sarawak</p>
+
     <nav class="bottom-nav" aria-label="Main">
       <button class="nav-btn active" data-tab="home" type="button"><i aria-hidden="true">🏠</i>Home</button>
       <button class="nav-btn" data-tab="tasks" type="button"><i aria-hidden="true">📅</i>Calendar</button>
@@ -239,6 +244,7 @@
       </div>
       <p class="muted small">Your data is saved in this browser only. Keep the app open (a background tab is fine) to get reminders.</p>
       <button id="rerun-setup" class="btn small ghost" type="button">Run the welcome setup again</button>
+      <p class="made-by"><b>Remi</b> · by Curiosoul_Media · Made in Kuching, Sarawak</p>
     </div>
   </div>
 

@@ -344,7 +344,7 @@ function dismissAlert(id) {
 
 function updateTitle() {
   const n = $('#alerts').children.length;
-  document.title = n ? `(${n}) ⏰ Daily Reminders` : 'Daily Reminders';
+  document.title = n ? `(${n}) ⏰ Remi` : 'Remi';
 }
 
 function checkReminders() {
@@ -961,7 +961,7 @@ $('#export-btn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `daily-reminders-${todayKey()}.json`;
+  a.download = `remi-backup-${todayKey()}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 });
@@ -980,7 +980,7 @@ $('#import-file').addEventListener('change', async (e) => {
     render();
     toast('Backup restored');
   } catch {
-    toast('That file is not a Daily Reminders backup.');
+    toast('That file is not a Remi backup.');
   }
 });
 
@@ -1077,8 +1077,8 @@ function renderOnboarding() {
 
   if (ob.step === 1) {
     body.append(
-      el('h2', {}, 'Welcome! 👋'),
-      el('p', { className: 'sub' }, 'Meet your buddy. They live in a little café, cheer you on, and remind you of your tasks.'),
+      el('h2', {}, 'Welcome to Remi! 👋'),
+      el('p', { className: 'sub' }, 'Remi is your friend who reminds you. Meet your buddy: they live in a little café, cheer you on, and remind you of your tasks.'),
       el('canvas', { className: 'pix ob-scene', width: 112, height: 63 }),
       el('h3', {}, 'Choose your buddy'),
       el('div', { className: 'ob-grid' }, ...Pixel.CHARACTERS.map((ch) => el('button', {
@@ -1163,7 +1163,8 @@ function renderOnboarding() {
   const skip = el('button', { type: 'button', className: 'ob-skip', onclick: state.profile.setupDone ? closeOnboarding : finishOnboarding },
     state.profile.setupDone ? 'Close' : 'Skip');
   box.replaceChildren(el('div', { className: 'ob-card-wrap' },
-    el('div', { className: 'ob-top' }, steps, skip), body, el('div', { className: 'ob-actions' }, ...actions)));
+    el('div', { className: 'ob-top' }, steps, skip), body, el('div', { className: 'ob-actions' }, ...actions),
+    el('p', { className: 'made-by' }, el('b', {}, 'Remi'), ' · by Curiosoul_Media · Made in Kuching, Sarawak')));
   updateNotifyButton();
   drawOnboarding(0);
 }

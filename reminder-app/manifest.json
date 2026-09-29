@@ -1,6 +1,6 @@
 {
-  "name": "Daily Reminders",
-  "short_name": "Reminders",
+  "name": "Remi: your friend who reminds you",
+  "short_name": "Remi",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#fbf1dc",
