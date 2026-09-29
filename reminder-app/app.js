@@ -10,6 +10,9 @@ const SUMMARY_WINDOW_MS = 3 * 60 * 60 * 1000;
 // Coming back to the app after this long gets a new hello from the pet.
 const GREET_AFTER_MS = 10 * 60 * 1000;
 
+// Coins for writing today's note (the coins for a task are set in Settings).
+const NOTE_COINS = 5;
+
 // When to be reminded, in minutes before the task.
 const ALERT_OPTIONS = [
   { min: 0, label: 'At the time', short: 'on time', soon: 'now' },
@@ -23,6 +26,7 @@ const ALERT_BY_MIN = Object.fromEntries(ALERT_OPTIONS.map((o) => [o.min, o]));
 
 const DEFAULT_SETTINGS = {
   defaultAlerts: [0],
+  coinsPerTask: 10,
   morning: { on: true, time: '08:00' },
   evening: { on: true, time: '21:00' },
   last: { morning: null, evening: null },
@@ -112,7 +116,12 @@ function save() {
   } catch { /* storage blocked (private window): keep working in memory */ }
 }
 
-Pet.init({ getState: () => state, save, toast, getProgress: progress, getUserName: () => state.profile.userName });
+Pet.init({
+  getState: () => state, save, toast, getProgress: progress,
+  getUserName: () => state.profile.userName,
+  getRewards: () => ({ task: state.settings.coinsPerTask, note: NOTE_COINS }),
+  onRebirth: () => openOnboarding({ hatch: true }),
+});
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const findTask = (id) => state.tasks.find((t) => t.id === id);
@@ -872,6 +881,8 @@ function renderSettings() {
   $('#evening-on').checked = s.evening.on;
   $('#evening-time').value = s.evening.time;
   $('#user-name').value = state.profile.userName;
+  $('#coins-per-task').value = String(state.settings.coinsPerTask);
+  $('#coins-late').textContent = Math.ceil(state.settings.coinsPerTask / 2);
   $('#music-on').checked = state.profile.music;
   $('#music-volume').value = state.profile.musicVolume;
   $('#sfx-on').checked = state.profile.sfx;
@@ -885,6 +896,13 @@ function renderSettings() {
   updateNotifyButton();
 }
 
+$('#coins-per-task').addEventListener('change', (e) => {
+  state.settings.coinsPerTask = Number(e.target.value) || 10;
+  save();
+  renderSettings();
+  Pet.render();
+  toast(`🪙 Each task now earns ${state.settings.coinsPerTask} coins`);
+});
 $('#user-name').addEventListener('change', (e) => {
   state.profile.userName = e.target.value.trim();
   save();
@@ -1055,9 +1073,9 @@ function drawOnboarding(frame) {
   });
 }
 
-function openOnboarding() {
+function openOnboarding({ hatch = false } = {}) {
   const p = state.pet;
-  ob = { step: 1, species: p.species, name: p.name, role: p.role, userName: state.profile.userName };
+  ob = { step: 1, species: p.species, name: p.name, role: p.role, userName: state.profile.userName, hatch };
   $('#onboarding').hidden = false;
   document.body.classList.add('sheet-open');
   renderOnboarding();
@@ -1077,8 +1095,10 @@ function renderOnboarding() {
 
   if (ob.step === 1) {
     body.append(
-      el('h2', {}, 'Welcome to Remi! 👋'),
-      el('p', { className: 'sub' }, 'Remi is your friend who reminds you. Meet your buddy: they live in a little café, cheer you on, and remind you of your tasks.'),
+      el('h2', {}, ob.hatch ? 'A new buddy is hatching! 🥚' : 'Welcome to Remi! 👋'),
+      el('p', { className: 'sub' }, ob.hatch
+        ? 'Choose who hatches next. Your coins, bag, outfits and street decor are all still here.'
+        : 'Remi is your friend who reminds you. Meet your buddy: they live in a little café, cheer you on, and remind you of your tasks.'),
       el('canvas', { className: 'pix ob-scene', width: 112, height: 63 }),
       el('h3', {}, 'Choose your buddy'),
       el('div', { className: 'ob-grid' }, ...Pixel.CHARACTERS.map((ch) => el('button', {
@@ -1160,8 +1180,9 @@ function renderOnboarding() {
   }
 
   // First visit: Skip keeps the defaults. Re-running from settings: Close leaves everything as it was.
-  const skip = el('button', { type: 'button', className: 'ob-skip', onclick: state.profile.setupDone ? closeOnboarding : finishOnboarding },
-    state.profile.setupDone ? 'Close' : 'Skip');
+  const rerun = state.profile.setupDone && !ob.hatch;
+  const skip = el('button', { type: 'button', className: 'ob-skip', onclick: rerun ? closeOnboarding : finishOnboarding },
+    rerun ? 'Close' : 'Skip');
   box.replaceChildren(el('div', { className: 'ob-card-wrap' },
     el('div', { className: 'ob-top' }, steps, skip), body, el('div', { className: 'ob-actions' }, ...actions),
     el('p', { className: 'made-by' }, el('b', {}, 'Remi'), ' · by Curiosoul_Media · Made in Kuching, Sarawak')));

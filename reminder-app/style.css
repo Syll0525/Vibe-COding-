@@ -813,3 +813,107 @@ body.sheet-open { overflow: hidden; }
   color: #9fb74f;
   animation: cover-rise 1s ease-out 1.6s both;
 }
+
+/* ---------- growing up ---------- */
+.bar.health span { background: repeating-linear-gradient(90deg, #7fcf8a 0 8px, #5bb56a 8px 10px); }
+.pet-age { margin: 10px 0 0; font: 0.95rem var(--pixel); color: var(--text); }
+.life-info { margin-top: 8px; font-size: 0.85rem; color: var(--muted); }
+.life-info summary { cursor: pointer; font: 0.9rem var(--pixel); color: var(--accent); }
+.life-info ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.farewell {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(38, 28, 30, 0.6);
+  animation: fade 0.4s ease-out;
+}
+.farewell-card {
+  width: min(420px, 100%);
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  padding: 22px 18px;
+  text-align: center;
+  box-shadow: 4px 4px 0 var(--line);
+}
+.farewell-card h2 { font-size: 1.6rem; text-transform: none; letter-spacing: 0; color: var(--accent); margin: 10px 0 6px; }
+.farewell-card p { margin: 6px 0; }
+.farewell-pet { width: 120px; height: 120px; image-rendering: pixelated; margin: 0 auto; background: var(--accent-soft); border-radius: 18px; border: 2px solid var(--soft-line); }
+
+/* ---------- Ask Remi chat ---------- */
+.chat-fab {
+  position: fixed;
+  right: max(16px, calc((100vw - 560px) / 2 + 12px));
+  bottom: calc(98px + env(safe-area-inset-bottom, 0px));
+  z-index: 34;
+  width: 58px;
+  height: 58px;
+  padding: 4px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--sun);
+  box-shadow: 3px 3px 0 var(--line);
+  cursor: pointer;
+  animation: fab-in 0.4s ease-out 0.3s both;
+}
+.chat-fab canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+.chat-fab::after {
+  content: "Ask";
+  position: absolute;
+  top: -8px;
+  left: -10px;
+  font: 600 0.7rem var(--pixel);
+  color: #fff;
+  background: var(--accent);
+  border: 2px solid var(--line);
+  border-radius: 99px;
+  padding: 0 6px;
+}
+.chat-fab[aria-expanded="true"]::after { content: "✕"; }
+.chat-fab:active { transform: translate(3px, 3px); box-shadow: none; }
+@keyframes fab-in { from { transform: scale(0); } }
+.chat {
+  position: fixed;
+  right: max(12px, calc((100vw - 560px) / 2 + 8px));
+  bottom: calc(166px + env(safe-area-inset-bottom, 0px));
+  z-index: 35;
+  width: min(380px, calc(100vw - 24px));
+  height: min(520px, calc(100vh - 220px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 var(--line);
+  overflow: hidden;
+  animation: slide-up 0.25s ease-out;
+}
+.chat-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--card); border-bottom: 2px solid var(--line); }
+.chat-avatar { width: 40px; height: 40px; image-rendering: pixelated; background: var(--accent-soft); border-radius: 10px; flex: none; }
+.chat-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.chat-title b { font: 600 1.1rem var(--pixel); color: var(--accent); }
+.chat-title small { font-size: 0.72rem; color: var(--muted); }
+.chat-log { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 86%; padding: 8px 12px; border-radius: 14px; white-space: pre-line; overflow-wrap: anywhere; font-size: 0.92rem; line-height: 1.45; }
+.msg.remi { align-self: flex-start; background: var(--card); border: 2px solid var(--line); border-bottom-left-radius: 4px; }
+.msg.me { align-self: flex-end; background: var(--accent); color: #fff; border: 2px solid var(--line); border-bottom-right-radius: 4px; }
+.msg.thinking { color: var(--muted); font-style: italic; animation: cover-blink 1.4s ease-in-out infinite; }
+.chat-suggest { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.chip-btn {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 2px solid var(--soft-line);
+  background: var(--input);
+  color: var(--text);
+  cursor: pointer;
+}
+.chip-btn:hover { border-color: var(--accent); }
+.chat-form { display: flex; gap: 8px; padding: 10px 12px; border-top: 2px solid var(--line); background: var(--card); }
+.chat-form input { flex: 1; min-width: 0; }
+#chat-send.stop { background: var(--muted); }
+.coins-select { width: 90px; flex: none; }
+@media (prefers-reduced-motion: reduce) { .chat, .chat-fab, .msg.thinking { animation: none; } }

@@ -2,9 +2,21 @@
 
 // The virtual pet: finishing tasks earns coins, coins buy food, outfits and decor.
 const Pet = (() => {
-  const COINS_ON_TIME = 10;
-  const COINS_LATE = 5;
-  const COINS_NOTE = 5;
+  // Default rewards; the coins for a task can be changed in Settings.
+  const DEFAULT_REWARDS = { task: 10, note: 5 };
+
+  // Growing up: stages by age in days. A buddy lives about six months; days spent sick
+  // count three times, so a neglected buddy grows old sooner.
+  const LIFESPAN_DAYS = 180;
+  const SICK_BELOW = 40;
+  const STAGES = [
+    { id: 'baby', name: 'Baby', icon: '🍼', from: 0 },
+    { id: 'child', name: 'Child', icon: '🧸', from: 3 },
+    { id: 'teen', name: 'Teen', icon: '🎒', from: 14 },
+    { id: 'adult', name: 'Adult', icon: '⭐', from: 45 },
+    { id: 'elder', name: 'Elder', icon: '👓', from: 120 },
+  ];
+  const MEDICINE = { id: 'medicine', name: 'Medicine', icon: '💊', price: 20, health: 60 };
   const ON_TIME_GRACE_MS = 60 * 60 * 1000;
   const PLAY_COOLDOWN_MS = 30 * 60 * 1000;
   const PAT_COOLDOWN_MS = 10 * 60 * 1000;
@@ -35,6 +47,8 @@ const Pet = (() => {
   let toast;
   let getProgress = () => ({ doneToday: 0, leftToday: 0, overdue: 0, next: null, streak: 0 });
   let getUserName = () => '';
+  let getRewards = () => DEFAULT_REWARDS;
+  let onRebirth = () => {};
   const pet = () => getState().pet;
   // Sfx is a script-level const (not on window), loaded before this file
   const sound = (name) => { if (typeof Sfx !== 'undefined') Sfx.play(name, pet().species); };
@@ -45,6 +59,7 @@ const Pet = (() => {
       tasksDone: 0, food: { onigiri: 2, cookie: 1 }, owned: [], equipped: {},
       decor: [], hiddenDecor: [], bg: 'day', lastNoteBonus: null, lastPlay: 0, lastPat: 0,
       role: 'barista', log: {}, moods: {}, lastGreet: 0,
+      health: 100, bornAt: Date.now(), sickDays: 0, stage: 'baby', passedAt: null, medicine: 0, memories: [],
     };
   }
 
@@ -54,6 +69,16 @@ const Pet = (() => {
     p.equipped ||= {};
     p.log ||= {};
     p.moods ||= {};
+    p.memories ||= [];
+    // buddies from before growing up existed: born on their first diary day
+    if (!state.pet?.bornAt) {
+      const first = Object.keys(p.log).sort()[0];
+      if (first) {
+        const [y, m, d] = first.split('-').map(Number);
+        p.bornAt = new Date(y, m - 1, d).getTime();
+      }
+      p.stage = stageOf(p).id;
+    }
     // keep two months of diary
     const oldest = dayKey(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000));
     for (const k of Object.keys(p.log)) if (k < oldest) delete p.log[k];
@@ -62,15 +87,33 @@ const Pet = (() => {
   }
 
   // Hunger and happiness drift down slowly: empty after about a day.
+  // Health falls while the buddy is starving (2/hour) or lonely (1/hour) and
+  // recovers (1/hour) while both are above half.
   function decay(p, now = Date.now()) {
     const mins = (now - p.updatedAt) / 60000;
     if (mins <= 0) return;
-    p.hunger = clamp(p.hunger - mins / 15);
-    p.happy = clamp(p.happy - mins / 20);
+    const hunger0 = p.hunger;
+    const happy0 = p.happy;
+    p.hunger = clamp(hunger0 - mins / 15);
+    p.happy = clamp(happy0 - mins / 20);
+    const starving = Math.max(0, mins - hunger0 * 15);
+    const lonely = Math.max(0, mins - happy0 * 20);
+    const cared = Math.min(mins, Math.max(0, (hunger0 - 50) * 15), Math.max(0, (happy0 - 50) * 20));
+    p.health = clamp(p.health - starving / 30 - lonely / 60 + cared / 60);
+    if (p.health < SICK_BELOW) p.sickDays += mins / 1440;
     p.updatedAt = now;
   }
 
+  const ageDays = (p, now = Date.now()) => Math.max(0, Math.floor((now - p.bornAt) / 864e5));
+  const lifeUsed = (p) => ageDays(p) + 2 * p.sickDays;
+  const isSick = (p) => p.health < SICK_BELOW;
+  function stageOf(p) {
+    const age = ageDays(p);
+    return [...STAGES].reverse().find((s) => age >= s.from);
+  }
+
   function mood(p) {
+    if (isSick(p)) return 'sad';
     if (p.hunger < 25) return 'hungry';
     if (p.happy < 25) return 'sad';
     if (p.happy >= 60 && p.hunger >= 40) return 'happy';
@@ -94,7 +137,8 @@ const Pet = (() => {
     const p = state.pet;
     decay(p);
     const onTime = Date.now() <= new Date(task.due).getTime() + ON_TIME_GRACE_MS;
-    const coins = onTime ? COINS_ON_TIME : COINS_LATE;
+    const perTask = getRewards().task;
+    const coins = onTime ? perTask : Math.ceil(perTask / 2);
     task.coins = coins;
     p.coins += coins;
     p.tasksDone += 1;
@@ -119,11 +163,12 @@ const Pet = (() => {
     const p = state.pet;
     if (p.lastNoteBonus === day) return 0;
     p.lastNoteBonus = day;
-    p.coins += COINS_NOTE;
-    logEvent(p, '📖', 'You wrote down what you learned today', { coins: COINS_NOTE });
+    const coins = getRewards().note;
+    p.coins += coins;
+    logEvent(p, '📖', 'You wrote down what you learned today', { coins });
     celebrate();
     sound('coin');
-    return COINS_NOTE;
+    return coins;
   }
 
   // ---------- speech ----------
@@ -142,6 +187,7 @@ const Pet = (() => {
     const p = pet();
     let text;
     if (speech && Date.now() < speechUntil) text = speech;
+    else if (isSick(p)) text = "I don't feel well… 🤒 Food, pats and 💊 medicine would help.";
     else if (isNight()) text = `${p.name} is sleeping… 💤`;
     else {
       const lines = {
@@ -201,6 +247,11 @@ const Pet = (() => {
     const p = pet();
     decay(p);
     const now = Date.now();
+    if (isSick(p)) {
+      sound('nope');
+      say("I'm too sick to play… some medicine? 💊");
+      return;
+    }
     if (p.hunger < 10) {
       sound('nope');
       say('Too hungry to play… a snack first? 🍪');
@@ -222,15 +273,37 @@ const Pet = (() => {
     commit();
   }
 
+  function heal() {
+    const p = pet();
+    decay(p);
+    if (!p.medicine) return;
+    if (p.health >= 95) {
+      sound('nope');
+      say("I'm feeling great already! Save it for later 💪");
+      return;
+    }
+    p.medicine -= 1;
+    p.health = clamp(p.health + MEDICINE.health);
+    addEffect('hearts', 2000);
+    sound('eat');
+    logEvent(p, '💊', 'You gave me medicine');
+    say(isSick(p) ? 'A little better… thank you 🤒' : 'I feel so much better! Thank you 💗');
+    commit();
+  }
+
   function buy(kind, id) {
     const p = pet();
-    const item = kind === 'food' ? FOOD_BY_ID[id]
+    const item = kind === 'med' ? MEDICINE
+      : kind === 'food' ? FOOD_BY_ID[id]
       : kind === 'acc' ? Pixel.ACC_BY_ID[id]
       : kind === 'decor' ? Pixel.DECOR.find((d) => d.id === id)
       : Pixel.BACKGROUNDS.find((b) => b.id === id);
     if (!item || p.coins < item.price) return;
     p.coins -= item.price;
-    if (kind === 'food') {
+    if (kind === 'med') {
+      p.medicine += 1;
+      toast(`Bought ${item.icon} ${item.name}. Give it from the Bag.`);
+    } else if (kind === 'food') {
       p.food[id] = (p.food[id] || 0) + 1;
       toast(`Bought ${item.icon} ${item.name}`);
     } else if (kind === 'acc') {
@@ -247,7 +320,7 @@ const Pet = (() => {
     }
     addEffect('hearts', 1500);
     sound('buy');
-    logEvent(p, '🎁', `You bought ${kind === 'food' ? 'me a' : 'the'} ${item.name.toLowerCase()}`);
+    logEvent(p, '🎁', `You bought ${kind === 'food' || kind === 'med' ? 'me' : 'the'} ${item.name.toLowerCase()}`);
     commit();
   }
 
@@ -318,6 +391,7 @@ const Pet = (() => {
 
     Pixel.drawPet(ctx, x, y, {
       species: p.species, equipped: p.equipped, role: p.role, mood: waving ? 'happy' : mood(p), sleeping,
+      stage: stageOf(p).id, sick: isSick(p),
       wave: waving ? Math.floor(t / 3) : null,
       eating: effects.some((e) => e.kind === 'eat') && Math.floor(t / 3) % 2 === 0,
     });
@@ -413,7 +487,7 @@ const Pet = (() => {
     const draw = () => {
       const ctx = mini.getContext('2d');
       ctx.clearRect(0, 0, 20, 17);
-      Pixel.drawPet(ctx, 1, 1, { species: p.species, equipped: p.equipped, role: p.role, mood: 'happy', wave: f++ });
+      Pixel.drawPet(ctx, 1, 1, { species: p.species, equipped: p.equipped, role: p.role, mood: 'happy', wave: f++, stage: stageOf(p).id, sick: isSick(p) });
     };
     draw();
     clearInterval(greetTimer);
@@ -563,12 +637,17 @@ const Pet = (() => {
   function renderShop(box) {
     const p = pet();
     box.append(el('p', { class: 'muted small tip' },
-      `Earn 🪙 ${COINS_ON_TIME} for each task done on time, 🪙 ${COINS_LATE} if it's late, and 🪙 ${COINS_NOTE} for writing today's note.`));
+      `Earn 🪙 ${getRewards().task} for each task done on time, 🪙 ${Math.ceil(getRewards().task / 2)} if it's late, and 🪙 ${getRewards().note} for writing today's note.`));
     box.append(section('Snacks', FOOD.map((f) => itemCard({
       preview: el('span', { class: 'emoji' }, f.icon), name: f.name,
       detail: `+${f.hunger} full · +${f.happy} happy${p.food[f.id] ? ` · have ${p.food[f.id]}` : ''}`,
       price: f.price, onclick: () => buy('food', f.id),
     }))));
+    box.append(section('Care', [itemCard({
+      preview: el('span', { class: 'emoji' }, MEDICINE.icon), name: MEDICINE.name,
+      detail: `+${MEDICINE.health} health · for when your buddy feels sick${p.medicine ? ` · have ${p.medicine}` : ''}`,
+      price: MEDICINE.price, onclick: () => buy('med', MEDICINE.id),
+    })]));
     box.append(section('Outfits', Pixel.ACCESSORIES.map((a) => {
       const owned = p.owned.includes(a.id);
       return itemCard({
@@ -600,6 +679,12 @@ const Pet = (() => {
       detail: `+${f.hunger} full · +${f.happy} happy`, owned: true, label: 'Feed', onclick: () => feed(f.id),
     }));
     box.append(section('Snacks', snacks, 'Your bag is empty. Buy snacks in the Shop.'));
+    if (p.medicine) {
+      box.append(section('Care', [itemCard({
+        preview: el('span', { class: 'emoji' }, MEDICINE.icon), name: `${MEDICINE.name} × ${p.medicine}`,
+        detail: `+${MEDICINE.health} health`, owned: true, label: 'Give', onclick: heal,
+      })]));
+    }
   }
 
   function renderStyle(box) {
@@ -666,6 +751,7 @@ const Pet = (() => {
       label: p.bg === b.id ? 'Using' : 'Use', onclick: () => { p.bg = b.id; commit(); },
     }));
     box.append(section('Sky', skies));
+    renderMemories(box);
   }
 
   function renderView() {
@@ -676,13 +762,105 @@ const Pet = (() => {
     ({ shop: renderShop, bag: renderBag, style: renderStyle })[view](box);
   }
 
+  // ---------- the end of a long life ----------
+
+  function showFarewell() {
+    if (document.getElementById('farewell')) return;
+    const p = pet();
+    const portrait = el('canvas', { class: 'pix farewell-pet', width: 20, height: 20 });
+    Pixel.drawPet(portrait.getContext('2d'), 2, 3, { species: p.species, role: p.role, stage: 'elder', sleeping: true, equipped: p.equipped });
+    const days = ageDays(p, p.passedAt);
+    const box = el('div', { id: 'farewell', class: 'farewell', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'farewell-title' },
+      el('div', { class: 'farewell-card' },
+        portrait,
+        el('h2', { id: 'farewell-title' }, `Goodbye, ${p.name} 🌈`),
+        el('p', {}, `After ${plural(days, 'day')} together, ${p.name} has grown very old and gone to the big café in the sky.`),
+        el('p', { class: 'muted small' }, `You finished ${plural(p.tasksDone, 'task')} together as ${roleOf(p).name.toLowerCase()} and friend. ${p.name} will always be in your Memories.`),
+        el('button', { type: 'button', class: 'btn primary wide', onclick: rebirth }, '🥚 Welcome a new buddy'),
+        el('p', { class: 'muted small' }, 'Your coins, bag, outfits and street decor stay with you.')));
+    document.body.append(box);
+    sound('aww');
+  }
+
+  function rebirth() {
+    const p = pet();
+    p.memories.push({
+      name: p.name, species: p.species, role: p.role, bornAt: p.bornAt,
+      passedAt: p.passedAt || Date.now(), days: ageDays(p, p.passedAt || Date.now()), tasks: p.tasksDone,
+    });
+    const now = Date.now();
+    Object.assign(p, {
+      name: Pixel.CHAR_BY_ID[p.species].name, hunger: 80, happy: 80, health: 100, bornAt: now, updatedAt: now,
+      sickDays: 0, stage: 'baby', passedAt: null, tasksDone: 0, lastPlay: 0, lastPat: 0,
+    });
+    p.food.onigiri = (p.food.onigiri || 0) + 2; // a welcome gift
+    logEvent(p, '🥚', 'I hatched! Nice to meet you');
+    persist();
+    document.getElementById('farewell')?.remove();
+    onRebirth();
+  }
+
+  function renderMemories(box) {
+    const p = pet();
+    if (!p.memories.length) return;
+    box.append(section('🌈 Memories', p.memories.slice().reverse().map((m) => itemCard({
+      preview: petCanvas({ species: m.species, role: m.role, stage: 'elder' }),
+      name: m.name,
+      detail: `${Pixel.CHAR_BY_ID[m.species]?.kind || ''} ${Pixel.ROLE_BY_ID[m.role]?.name.toLowerCase() || ''} · ${plural(m.days, 'day')} · ${plural(m.tasks, 'task')} together`,
+      owned: true, label: '💐', onclick: () => say(`I miss ${m.name} too 💐`),
+    }))));
+  }
+
+  // A plain summary for the Ask Remi chat.
+  function info() {
+    const p = pet();
+    decay(p);
+    const st = stageOf(p);
+    return {
+      name: p.name, kind: Pixel.CHAR_BY_ID[p.species]?.kind, job: roleOf(p).name, stage: st.name,
+      ageDays: ageDays(p), daysLeft: Math.max(0, Math.round(LIFESPAN_DAYS - lifeUsed(p))), lifespanDays: LIFESPAN_DAYS,
+      level: level(p), tasksDone: p.tasksDone, coins: p.coins,
+      fullness: Math.round(p.hunger), happiness: Math.round(p.happy), health: Math.round(p.health), sick: isSick(p),
+      snacks: { ...p.food }, medicine: p.medicine, rewards: { ...getRewards(), late: Math.ceil(getRewards().task / 2) },
+      memories: p.memories.map((m) => ({ name: m.name, days: m.days, tasks: m.tasks })),
+    };
+  }
+
+  // Diary lines for a day (the pet's job work plus what you did), for the report and the chat.
+  function diary(day) {
+    const p = pet();
+    return [...(p.log[day] || []), ...workFor(p, day)].sort((a, b) => a.t - b.t)
+      .map((e) => ({ time: fmtTime(new Date(e.t)), icon: e.icon, text: e.text, coins: e.coins || 0 }));
+  }
+
   function render() {
     const p = pet();
     decay(p);
     $('#coin-count').textContent = p.coins;
     $('#pet-name').textContent = p.name;
     $('#pet-level').textContent = `Lv ${level(p)} ${roleOf(p).icon} ${roleOf(p).name} · ${plural(p.tasksDone, 'task')} done`;
-    for (const [cls, value] of [['.bar-hunger', p.hunger], ['.bar-happy', p.happy]]) {
+    const st = stageOf(p);
+    const age = ageDays(p);
+    const left = Math.max(0, Math.round(LIFESPAN_DAYS - lifeUsed(p)));
+    const ageEl = $('#pet-age');
+    if (ageEl) {
+      ageEl.textContent = `${st.icon} ${st.name} · ${age === 0 ? 'born today' : `${plural(age, 'day')} old`}`
+        + (st.id === 'elder' ? ` · about ${plural(left, 'day')} left together` : '')
+        + (isSick(p) ? ' · 🤒 feeling sick' : '');
+    }
+    if (p.stage !== st.id) {
+      p.stage = st.id;
+      logEvent(p, st.icon, `I grew into a${/^[aeiou]/i.test(st.name) ? 'n' : ''} ${st.name.toLowerCase()}!`);
+      addEffect('hearts', 3000);
+      toast(`${st.icon} ${p.name} grew into a${/^[aeiou]/i.test(st.name) ? 'n' : ''} ${st.name}!`);
+      persist();
+    }
+    if (!p.passedAt && lifeUsed(p) >= LIFESPAN_DAYS) {
+      p.passedAt = Date.now();
+      persist();
+    }
+    if (p.passedAt) showFarewell();
+    for (const [cls, value] of [['.bar-hunger', p.hunger], ['.bar-happy', p.happy], ['.bar-health', p.health]]) {
       document.querySelectorAll(cls).forEach((b) => {
         b.style.width = `${value}%`;
         b.parentElement.setAttribute('aria-valuenow', Math.round(value));
@@ -697,6 +875,8 @@ const Pet = (() => {
     ({ getState, save: persist, toast } = opts);
     if (opts.getProgress) getProgress = opts.getProgress;
     if (opts.getUserName) getUserName = opts.getUserName;
+    if (opts.getRewards) getRewards = opts.getRewards;
+    if (opts.onRebirth) onRebirth = opts.onRebirth;
     document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => {
       ({ feed: () => feed(), pat, play, ask: () => openReport() })[b.dataset.act]();
     }));
@@ -707,5 +887,8 @@ const Pet = (() => {
     render();
   }
 
-  return { ensure, reward, takeBack, noteBonus, init, render, greet, lastGreet, encourage, roleOf: () => roleOf(pet()), name: () => pet().name };
+  return {
+    ensure, reward, takeBack, noteBonus, init, render, greet, lastGreet, encourage, info, diary,
+    roleOf: () => roleOf(pet()), name: () => pet().name, stage: () => stageOf(pet()).id, STAGES, LIFESPAN_DAYS,
+  };
 })();

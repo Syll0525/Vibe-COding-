@@ -289,8 +289,65 @@ const Pixel = (() => {
 
   const PAW = { rows: ['.oo.', 'obbo', 'obbo', '.oo.'] };
 
-  // look: { species, equipped: {slot: id}, role, mood: happy|ok|sad|hungry, sleeping, eating, wave }
+  // Babies are small and round (12×12) with their species' ears on top.
+  const BABY_BODY = [
+    '..oooooooo..',
+    '.obbbbbbbbo.',
+    'obbbbbbbbbbo',
+    'obebbbbbbebo',
+    'obpbllllbpbo',
+    'obbbllllbbbo',
+    'obbbbbbbbbbo',
+    '.obbbbbbbbo.',
+    '..oooooooo..',
+    '...oo..oo...',
+  ];
+  const BABY_EARS = {
+    hamster: ['............', '.oo......oo.'],
+    bear: ['............', '.oo......oo.'],
+    bunny: ['.oo......oo.', '.obo....obo.'],
+    cat: ['..o......o..', '.obo....obo.'],
+    chick: ['.....oo.....', '......o.....'],
+  };
+  const CANE = { colors: { w: '#8a5a3b' }, rows: ['ww', '.w', '.w', '.w', '.w', '.w', '.w', '.w'] };
+  const SWEAT = { colors: { s: '#7fb8ff', w: '#ffffff' }, rows: ['.s', 'sw', 'ss'] };
+
+  function drawBaby(ctx, x, y, look) {
+    const ch = CHAR_BY_ID[look.species] || CHARACTERS[0];
+    const colors = { o: OUTLINE, e: EYE, ...ch.colors };
+    const rows = [...(BABY_EARS[ch.id] || BABY_EARS.hamster), ...BABY_BODY];
+    const bx = x + 2;
+    const by = y + 4;
+    rows.forEach((row, j) => {
+      for (let i = 0; i < row.length; i++) {
+        const k = row[i];
+        if (k === '.') continue;
+        if (k === 'e' && look.sleeping) {
+          rect(ctx, colors.b, bx + i, by + j);
+          rect(ctx, EYE, bx + i - 1, by + j + 1, 2, 1);
+          continue;
+        }
+        rect(ctx, k === 'e' ? EYE : colors[k], bx + i, by + j);
+      }
+    });
+    if (!look.sleeping) {
+      const c = look.eating ? '#c0504a' : OUTLINE;
+      if (look.mood === 'happy' || look.eating) { rect(ctx, c, bx + 5, by + 8); rect(ctx, c, bx + 6, by + 8); }
+      else rect(ctx, c, bx + 5, by + 8, 2, 1);
+    }
+    if (look.wave != null) {
+      const up = look.wave % 2 === 0;
+      drawSprite(ctx, PAW, x + (up ? 12 : 13), y + (up ? 6 : 8), { b: colors.b });
+    }
+    if (look.sick) drawSprite(ctx, SWEAT, bx + 11, by + 2);
+  }
+
+  // look: { species, equipped: {slot: id}, role, stage, sick, mood: happy|ok|sad|hungry, sleeping, eating, wave }
   function drawPet(ctx, x, y, look) {
+    if (look.stage === 'baby') {
+      drawBaby(ctx, x, y, look);
+      return;
+    }
     const ch = CHAR_BY_ID[look.species] || CHARACTERS[0];
     const colors = { o: OUTLINE, e: EYE, ...ch.colors };
     ch.rows.forEach((row, j) => {
@@ -332,6 +389,13 @@ const Pixel = (() => {
     } else if (role) {
       drawSprite(ctx, role.prop, x + role.prop.dx, y + role.prop.dy);
     }
+    if (look.stage === 'elder') {
+      // grey eyebrows and a walking cane
+      rect(ctx, '#c9c2bb', x + 3, y + 6, 2, 1);
+      rect(ctx, '#c9c2bb', x + 11, y + 6, 2, 1);
+      drawSprite(ctx, CANE, x - 1, y + 8);
+    }
+    if (look.sick) drawSprite(ctx, SWEAT, x + 13, y + 4);
   }
 
   // ---------- the café street ----------
