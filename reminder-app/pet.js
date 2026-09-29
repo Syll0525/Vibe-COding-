@@ -36,6 +36,8 @@ const Pet = (() => {
   let getProgress = () => ({ doneToday: 0, leftToday: 0, overdue: 0, next: null, streak: 0 });
   let getUserName = () => '';
   const pet = () => getState().pet;
+  // Sfx is a script-level const (not on window), loaded before this file
+  const sound = (name) => { if (typeof Sfx !== 'undefined') Sfx.play(name, pet().species); };
 
   function fresh() {
     return {
@@ -99,6 +101,7 @@ const Pet = (() => {
     p.happy = clamp(p.happy + 10);
     logEvent(p, '✅', `You finished "${task.title}"${task.location ? ` at ${task.location}` : ''}${onTime ? '' : ' (a bit late)'}`, { taskId: task.id, coins });
     celebrate();
+    sound('yay');
     say(onTime ? `Yay, right on time! +${coins} coins 🪙` : `Better late than never! +${coins} coins 🪙`);
     return coins;
   }
@@ -119,6 +122,7 @@ const Pet = (() => {
     p.coins += COINS_NOTE;
     logEvent(p, '📖', 'You wrote down what you learned today', { coins: COINS_NOTE });
     celebrate();
+    sound('coin');
     return COINS_NOTE;
   }
 
@@ -163,6 +167,7 @@ const Pet = (() => {
       return;
     }
     if (p.hunger >= 97) {
+      sound('nope');
       say("I'm so full! Maybe later 😋");
       return;
     }
@@ -171,6 +176,7 @@ const Pet = (() => {
     p.hunger = clamp(p.hunger + f.hunger);
     p.happy = clamp(p.happy + f.happy);
     addEffect('eat', 2400, { food: id });
+    sound('eat');
     logEvent(p, f.icon, `You fed me a ${f.name.toLowerCase()}`);
     say(`Yum, ${f.name.toLowerCase()}! ${f.icon}`);
     commit();
@@ -186,6 +192,7 @@ const Pet = (() => {
       logEvent(p, '💗', 'You gave me head pats');
     }
     addEffect('hearts', 2000);
+    sound(isNight() ? 'yawn' : 'pat');
     say(isNight() ? 'Mmm… *yawn* 💤' : 'Hehe, that tickles! 💗');
     commit();
   }
@@ -195,11 +202,13 @@ const Pet = (() => {
     decay(p);
     const now = Date.now();
     if (p.hunger < 10) {
+      sound('nope');
       say('Too hungry to play… a snack first? 🍪');
       return;
     }
     const wait = PLAY_COOLDOWN_MS - (now - p.lastPlay);
     if (wait > 0) {
+      sound('nope');
       say(`Phew, I'm tired! Let's play again in ${Math.ceil(wait / 60000)} min 😴`);
       return;
     }
@@ -207,6 +216,7 @@ const Pet = (() => {
     p.happy = clamp(p.happy + 15);
     p.hunger = clamp(p.hunger - 5);
     addEffect('ball', 3200);
+    sound('boing');
     logEvent(p, '⚽', 'We played catch together');
     say('Wheee! Catch! ⚽');
     commit();
@@ -236,6 +246,7 @@ const Pet = (() => {
       toast(`${item.icon} ${item.name} unlocked!`);
     }
     addEffect('hearts', 1500);
+    sound('buy');
     logEvent(p, '🎁', `You bought ${kind === 'food' ? 'me a' : 'the'} ${item.name.toLowerCase()}`);
     commit();
   }
@@ -395,6 +406,7 @@ const Pet = (() => {
     p.lastGreet = Date.now();
     persist();
     addEffect('wave', 3500);
+    sound('hello');
 
     const mini = el('canvas', { class: 'pix wave-pet', width: 20, height: 17 });
     let f = 0;
@@ -425,6 +437,7 @@ const Pet = (() => {
           body.querySelector('.greet-q')?.remove();
           body.querySelector('.moods')?.replaceWith(el('p', { class: 'greet-reply' }, m.reply));
           addEffect('hearts', 2000);
+          sound(m.id === 'tired' || m.id === 'stressed' ? 'aww' : 'pat');
           setTimeout(closeGreeting, 9000);
         },
       }, el('span', { class: 'mood-icon' }, m.icon), m.label))));

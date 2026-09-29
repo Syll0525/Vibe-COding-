@@ -1,10 +1,10 @@
 'use strict';
 
-// Background music: Island Life in light mode, Peep the Pet in dark mode.
+// Background music: Cozy Toy Groove in light mode, Peep the Pet in dark mode.
 // Browsers only allow sound after the person taps something, so playback starts on the first tap.
 const Music = (() => {
-  const TRACKS = { day: 'music/island-life.mp3', night: 'music/peep-the-pet.mp3' };
-  const VOLUME = 0.35;
+  const TRACKS = { day: 'music/cozy-toy-groove.mp3', night: 'music/peep-the-pet.mp3' };
+  let volume = 0.35;
   const players = {};
   let enabled = false;
   let mode = 'day';
@@ -45,9 +45,9 @@ const Music = (() => {
     const a = player(want);
     if (a.paused) {
       a.volume = 0;
-      a.play().then(() => fade(a, VOLUME, 1200)).catch(() => { unlocked = false; });
+      a.play().then(() => fade(a, volume, 1200)).catch(() => { unlocked = false; });
     } else {
-      fade(a, VOLUME, 700);
+      fade(a, volume, 700);
     }
   }
 
@@ -64,6 +64,7 @@ const Music = (() => {
   return {
     setEnabled(on) { enabled = on; sync(); },
     setMode(m) { if (m !== mode) { mode = m; sync(); } },
+    setVolume(v) { volume = Math.max(0, Math.min(1, v)); sync(); },
     unlock,
     // which track is currently playing ('day', 'night' or null)
     playing: () => Object.keys(players).find((k) => !players[k].paused) || null,

@@ -439,7 +439,7 @@ textarea { resize: vertical; min-height: 160px; }
 .setting-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 .setting-row .switch { flex: 1 1 150px; min-width: 0; display: flex; gap: 8px; align-items: center; }
 .setting-row .switch input { width: 20px; height: 20px; accent-color: var(--leaf); }
-.setting-row input[type=time] { width: 132px; flex: none; }
+.setting-row input[type=time] { width: 150px; flex: none; }
 #test-notify { margin-top: 6px; }
 
 /* list / calendar */
@@ -661,7 +661,8 @@ body.sheet-open { overflow: hidden; }
 .mini.dark { background: #262136; }
 .mini.dark i { background: #332b44; border: 1px solid #120e1a; }
 .mini.dark i:first-child { background: #ee8a6f; width: 60%; }
-.mini.auto { background: linear-gradient(135deg, #fbf1dc 50%, #262136 50%); }
+.mini.auto { background: linear-gradient(135deg, #fbf1dc 50%, #262136 50%); position: relative; }
+.mini.auto::after { content: "7am ☀️ · 7pm 🌙"; position: absolute; left: 4px; right: 4px; bottom: 3px; font: 600 0.62rem var(--pixel); color: #fff; text-shadow: 1px 1px 0 #262136; text-align: right; }
 .mini.auto i { display: none; }
 
 /* ---------- first-time setup ---------- */
@@ -723,3 +724,6 @@ body.sheet-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .sheet, .sheet-card { animation: none; }
 }
+
+/* volume sliders */
+.volume { flex: 1 1 120px; min-width: 0; accent-color: var(--accent); padding: 0; border: none; background: none; }

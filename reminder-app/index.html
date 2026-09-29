@@ -198,7 +198,12 @@
       <h3>Sound</h3>
       <div class="setting-row">
         <label class="switch"><input id="music-on" type="checkbox"> 🎵 Background music</label>
-        <span class="muted small">Island Life by day, Peep the Pet at night</span>
+        <input id="music-volume" class="volume" type="range" min="0" max="100" step="5" aria-label="Music volume">
+      </div>
+      <p class="muted small field-label">Cozy Toy Groove by day, Peep the Pet at night</p>
+      <div class="setting-row">
+        <label class="switch"><input id="sfx-on" type="checkbox"> 🐾 Pet sounds</label>
+        <input id="sfx-volume" class="volume" type="range" min="0" max="100" step="5" aria-label="Pet sound volume">
       </div>
 
       <h3>Reminders</h3>
@@ -237,6 +242,7 @@
   <script src="pixel.js"></script>
   <script src="pet.js"></script>
   <script src="music.js"></script>
+  <script src="sfx.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -76,7 +76,7 @@ function load() {
 function upgrade(data) {
   Pet.ensure(data);
   const s = data.settings || {};
-  data.profile = { setupDone: false, userName: '', theme: 'auto', music: true, ...data.profile };
+  data.profile = { setupDone: false, userName: '', theme: 'auto', music: true, musicVolume: 35, sfx: true, sfxVolume: 60, ...data.profile };
   data.settings = {
     ...DEFAULT_SETTINGS, ...s,
     morning: { ...DEFAULT_SETTINGS.morning, ...s.morning },
@@ -759,31 +759,37 @@ $('#settings-btn').addEventListener('click', () => {
 const THEMES = [
   { id: 'light', icon: '☀️', label: 'Light' },
   { id: 'dark', icon: '🌙', label: 'Dark' },
-  { id: 'auto', icon: '📱', label: 'Auto' },
+  { id: 'auto', icon: '🕖', label: 'Auto' },
 ];
-const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-const isDark = () => state.profile.theme === 'dark' || (state.profile.theme === 'auto' && darkQuery.matches);
+// Auto follows the sun: light from 7am, dark from 7pm.
+const DAY_STARTS = 7;
+const NIGHT_STARTS = 19;
+const isDaytime = () => { const h = new Date().getHours(); return h >= DAY_STARTS && h < NIGHT_STARTS; };
+const isDark = () => state.profile.theme === 'dark' || (state.profile.theme === 'auto' && !isDaytime());
 
 function applyLook() {
-  const theme = state.profile.theme;
-  if (theme === 'auto') delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.theme = isDark() ? 'dark' : 'light';
+  const pr = state.profile;
   Music.setMode(isDark() ? 'night' : 'day');
-  Music.setEnabled(state.profile.music);
+  Music.setVolume(pr.musicVolume / 100);
+  Music.setEnabled(pr.music);
+  Sfx.setEnabled(pr.sfx);
+  Sfx.setVolume(pr.sfxVolume / 100);
   const btn = $('#music-btn');
   btn.textContent = state.profile.music ? '🔊' : '🔇';
   btn.setAttribute('aria-label', state.profile.music ? 'Mute music' : 'Play music');
   btn.setAttribute('aria-pressed', String(!state.profile.music));
   $('#music-on').checked = state.profile.music;
 }
-darkQuery.addEventListener('change', applyLook);
+// switch between day and night on time in Auto
+setInterval(() => { if (state.profile.theme === 'auto') applyLook(); }, 60 * 1000);
 
 $('#music-btn').addEventListener('click', () => {
   state.profile.music = !state.profile.music;
   save();
   applyLook();
   Music.unlock();
-  toast(state.profile.music ? `🎵 Music on: ${isDark() ? 'Peep the Pet' : 'Island Life'}` : '🔇 Music off');
+  toast(state.profile.music ? `🎵 Music on: ${isDark() ? 'Peep the Pet' : 'Cozy Toy Groove'}` : '🔇 Music off');
 });
 
 function themeCards(container, current, onPick) {
@@ -867,6 +873,9 @@ function renderSettings() {
   $('#evening-time').value = s.evening.time;
   $('#user-name').value = state.profile.userName;
   $('#music-on').checked = state.profile.music;
+  $('#music-volume').value = state.profile.musicVolume;
+  $('#sfx-on').checked = state.profile.sfx;
+  $('#sfx-volume').value = state.profile.sfxVolume;
   themeCards($('#theme-cards'), state.profile.theme, (id) => {
     state.profile.theme = id;
     save();
@@ -887,6 +896,25 @@ $('#music-on').addEventListener('change', (e) => {
   applyLook();
   Music.unlock();
 });
+$('#music-volume').addEventListener('input', (e) => {
+  state.profile.musicVolume = Number(e.target.value);
+  if (!state.profile.music && state.profile.musicVolume > 0) state.profile.music = true;
+  applyLook();
+  Music.unlock();
+});
+$('#sfx-on').addEventListener('change', (e) => {
+  state.profile.sfx = e.target.checked;
+  save();
+  applyLook();
+  Sfx.play('pat', state.pet.species);
+});
+$('#sfx-volume').addEventListener('input', (e) => {
+  state.profile.sfxVolume = Number(e.target.value);
+  applyLook();
+});
+// save sliders once the finger lets go, and play a sample so the level can be heard
+$('#music-volume').addEventListener('change', save);
+$('#sfx-volume').addEventListener('change', () => { save(); Sfx.play('pat', state.pet.species); });
 $('#rerun-setup').addEventListener('click', () => {
   closeSheet($('#settings-sheet'));
   openOnboarding();
@@ -1101,6 +1129,8 @@ function renderOnboarding() {
     const petName = (ob.name || '').trim() || Pixel.CHAR_BY_ID[ob.species].name;
     const music = el('input', { type: 'checkbox', id: 'ob-music', checked: state.profile.music });
     music.addEventListener('change', () => { state.profile.music = music.checked; applyLook(); Music.unlock(); });
+    const sfx = el('input', { type: 'checkbox', id: 'ob-sfx', checked: state.profile.sfx });
+    sfx.addEventListener('change', () => { state.profile.sfx = sfx.checked; applyLook(); Sfx.play('pat', ob.species); });
     const timeRow = (kind, label) => {
       const on = el('input', { type: 'checkbox', checked: s[kind].on });
       on.addEventListener('change', () => { s[kind].on = on.checked; });
@@ -1117,6 +1147,7 @@ function renderOnboarding() {
       el('h3', {}, 'Look'), looks,
       el('div', { className: 'card ob-card' },
         el('div', { className: 'setting-row' }, el('label', { className: 'switch', htmlFor: 'ob-music' }, music, ' 🎵 Background music')),
+        el('div', { className: 'setting-row' }, el('label', { className: 'switch', htmlFor: 'ob-sfx' }, sfx, ' 🐾 Pet sounds')),
         el('div', { className: 'setting-row' }, el('span', { className: 'switch' }, '🔔 Pop-up notifications'), notify),
         timeRow('morning', '☀️ Morning plan'),
         timeRow('evening', '🌙 Evening check-in'),
