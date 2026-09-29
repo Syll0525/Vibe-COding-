@@ -2,6 +2,7 @@
 
 A small reminder app that runs in your browser. No install, no account, no server.
 
+- **Cover page.** Every visit opens on a crayon-drawing cover that pops in slowly with "Welcome" and "by Curiosoul_Media · Made in Kuching, Sarawak". Tap anywhere to start (this also lets the music begin).
 - **Welcome setup.** The first time you open the app, 3 quick steps: pick your buddy, name it (🎲 suggests one) and choose its job, then your name, ☀️ light / 🌙 dark / 📱 auto look, music, and when to be reminded. Run it again any time from ⚙️ Settings.
 - **Home page.** Just your buddy (the café camera follows it around) and today's to-do list with a progress bar. The next task is highlighted. The bottom bar has 🏠 Home, 📅 Calendar, ＋ Add, 🐹 Pet and 📖 Notes.
 - **Music.** *Cozy Toy Groove* plays in light mode and *Peep the Pet* in dark mode, fading between them. Tap 🔊 at the top right to mute or unmute, and set the volume in ⚙️ Settings. Browsers only allow music after your first tap, so it starts then.

@@ -1243,10 +1243,29 @@ applyLook();
 render();
 checkReminders();
 
-// New visitors set up their buddy first. After that the pet says hi every time
-// you open the app, and again when you come back after a while.
-if (state.profile.setupDone) Pet.greet();
-else openOnboarding();
+// The cover shows first. Tapping it opens the app (and lets music and sounds start).
+// New visitors then set up their buddy; after that the pet says hi on every visit.
+function startApp() {
+  if (state.profile.setupDone) Pet.greet();
+  else openOnboarding();
+}
+
+function closeCover() {
+  const cover = $('#cover');
+  if (!cover || cover.classList.contains('leaving')) return;
+  cover.classList.add('leaving');
+  Music.unlock();
+  setTimeout(() => cover.remove(), 600);
+  startApp();
+}
+$('#cover').addEventListener('click', closeCover);
+$('#cover').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    closeCover();
+  }
+});
+$('#cover').focus();
 let hiddenAt = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) hiddenAt = Date.now();
