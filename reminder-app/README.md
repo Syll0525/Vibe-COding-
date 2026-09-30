@@ -38,6 +38,20 @@ Remi is hosted at **https://syll0525.github.io/Vibe-COding-/reminder-app/** (Git
 
 Once installed, Remi opens full screen with its own icon and keeps working offline. After changing app files, bump `VERSION` in `sw.js` so installed copies pick up the update.
 
+## Get Remi on Google
+
+The page already has a search description, keywords, a link preview card (`og-image.jpg`, shown when the link is shared on WhatsApp, Instagram, Facebook or Telegram) and a `sitemap.xml`. Once GitHub Pages is on:
+
+1. Go to **https://search.google.com/search-console** and sign in with your Google account.
+2. Choose **Add property → URL prefix** and enter `https://syll0525.github.io/Vibe-COding-/reminder-app/`.
+3. To prove it's yours, pick **HTML tag**. Google shows a line like `<meta name="google-site-verification" content="abc123…">`. Add it to the `<head>` of `index.html` (or send it to Claude to add), push, wait a minute, then click **Verify**.
+4. In the left menu open **Sitemaps**, enter `sitemap.xml` and click **Submit**.
+5. Open **URL inspection**, paste the address and click **Request indexing**.
+
+Google usually lists a new site within a few days to a couple of weeks. Searching `Remi Curiosoul_Media` or `Remi reminder app Kuching` should find it first.
+
+To check the preview card, paste the link into https://www.opengraph.xyz after the site is live.
+
 ## How to open it
 
 **Quickest:** double-click `index.html`. Everything works, except the notification buttons (Done/Snooze inside the notification itself), which need the page served over http.

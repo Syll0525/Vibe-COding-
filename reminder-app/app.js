@@ -1,6 +1,8 @@
 'use strict';
 
 const STORE_KEY = 'dailyReminders.v1';
+// the page's own title ("Remi: your friend who reminds you"), kept for search and bookmarks
+const BASE_TITLE = document.title || 'Remi';
 
 // Remi's own web address (GitHub Pages). Inside the Claude viewer the app can't be
 // installed, so Settings points there instead.
@@ -359,7 +361,7 @@ function dismissAlert(id) {
 
 function updateTitle() {
   const n = $('#alerts').children.length;
-  document.title = n ? `(${n}) ⏰ Remi` : 'Remi';
+  document.title = n ? `(${n}) ⏰ ${BASE_TITLE}` : BASE_TITLE;
 }
 
 function checkReminders() {

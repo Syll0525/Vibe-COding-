@@ -1,7 +1,7 @@
 // Remi's service worker: keeps the app working offline once installed, and handles
 // clicks on reminder notifications ("Mark done" / "Snooze").
 // Bump VERSION whenever app files change so phones pick up the new version.
-const VERSION = 'remi-v2';
+const VERSION = 'remi-v3';
 const APP_SHELL = [
   './', 'index.html', 'style.css', 'pixel.js', 'pet.js', 'music.js', 'sfx.js', 'app.js', 'chat.js',
   'cover.jpg', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
