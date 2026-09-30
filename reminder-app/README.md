@@ -28,6 +28,16 @@ A small reminder app that runs in your browser. No install, no account, no serve
 - **Choose when to be reminded.** For each task pick any of: at the time, 10 min, 30 min, 1 hour, 2 hours, or 1 day before. In 🔔 Reminder settings choose the defaults, a ☀️ morning plan (today's tasks) and a 🌙 evening check-in, each at the time you want. "Send a test reminder" checks it works.
 - **Backup.** Export everything to a JSON file and import it on another browser.
 
+## Put Remi on your home screen
+
+Remi is hosted at **https://syll0525.github.io/Vibe-COding-/reminder-app/** (GitHub Pages, from this branch).
+
+- **iPhone / iPad (Safari):** open the link, tap Share ⬆️, then **Add to Home Screen**.
+- **Android (Chrome):** open the link and tap **Install app** (or ⋮ → **Add to Home screen**). Remi's ⚙️ Settings also shows an install button when the browser allows it.
+- **Computer (Chrome / Edge):** click the install icon in the address bar.
+
+Once installed, Remi opens full screen with its own icon and keeps working offline. After changing app files, bump `VERSION` in `sw.js` so installed copies pick up the update.
+
 ## How to open it
 
 **Quickest:** double-click `index.html`. Everything works, except the notification buttons (Done/Snooze inside the notification itself), which need the page served over http.

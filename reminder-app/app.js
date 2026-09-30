@@ -1,6 +1,12 @@
 'use strict';
 
 const STORE_KEY = 'dailyReminders.v1';
+
+// Remi's own web address (GitHub Pages). Inside the Claude viewer the app can't be
+// installed, so Settings points there instead.
+const APP_URL = 'https://syll0525.github.io/Vibe-COding-/reminder-app/';
+let installEvent = null;
+
 const SNOOZE_MINUTES = 10;
 const CHECK_EVERY_MS = 10 * 1000;
 // Reminders missed by more than this while the page was closed are not replayed.
@@ -247,12 +253,12 @@ function systemNotify(title, body, { tag, taskId, actions } = {}) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   if (swReg) {
     swReg.showNotification(title, {
-      body, tag, requireInteraction: !!taskId, icon: 'icon.svg', data: { id: taskId },
+      body, tag, requireInteraction: !!taskId, icon: 'icons/icon-192.png', data: { id: taskId },
       actions: actions ? [{ action: 'done', title: '✓ Mark done' }, { action: 'snooze', title: `Snooze ${SNOOZE_MINUTES} min` }] : [],
     });
   } else {
     try {
-      const n = new Notification(title, { body, tag, icon: 'icon.svg' });
+      const n = new Notification(title, { body, tag, icon: 'icons/icon-192.png' });
       n.onclick = () => { window.focus(); n.close(); };
     } catch { /* some mobile browsers only allow service worker notifications */ }
   }
@@ -894,6 +900,7 @@ function renderSettings() {
     renderSettings();
   });
   updateNotifyButton();
+  renderInstall();
 }
 
 $('#coins-per-task').addEventListener('change', (e) => {
@@ -1000,6 +1007,56 @@ $('#import-file').addEventListener('change', async (e) => {
   } catch {
     toast('That file is not a Remi backup.');
   }
+});
+
+// ---------- install to home screen ----------
+
+function isInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+function isEmbedded() {
+  try { return window.top !== window.self; } catch { return true; }
+}
+
+function renderInstall() {
+  const box = $('#install-box');
+  const text = $('#install-text');
+  const btn = $('#install-btn');
+  btn.hidden = true;
+  if (isInstalled()) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  if (isEmbedded() || !location.protocol.startsWith('http')) {
+    text.replaceChildren('Open ', el('a', { href: APP_URL, target: '_blank', rel: 'noopener' }, "Remi's app page"),
+      ' in your phone browser, then add it to your home screen. It gets its own icon and works offline.');
+  } else if (installEvent) {
+    text.textContent = 'Install Remi like an app: its own icon, full screen, and it works offline.';
+    btn.hidden = false;
+  } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+    text.textContent = 'On iPhone or iPad: in Safari, tap the Share button (the square with an arrow ⬆️), then "Add to Home Screen".';
+  } else {
+    text.textContent = 'Open your browser menu (⋮ or ⋯) and choose "Install app" or "Add to Home screen".';
+  }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installEvent = e;
+  renderInstall();
+});
+window.addEventListener('appinstalled', () => {
+  installEvent = null;
+  toast('🎉 Remi is on your home screen!');
+  renderInstall();
+});
+$('#install-btn').addEventListener('click', async () => {
+  if (!installEvent) return;
+  installEvent.prompt();
+  await installEvent.userChoice;
+  installEvent = null;
+  renderInstall();
 });
 
 // ---------- home ----------

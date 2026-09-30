@@ -7,7 +7,12 @@
   <meta name="description" content="Remi, your friend who reminds you. A cosy pixel pet that helps with your tasks.">
   <meta name="theme-color" content="#d4634f">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Remi">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -249,6 +254,12 @@
       <p class="muted small field-label">Remind me before tasks (default)</p>
       <div id="default-alerts" class="chips"></div>
       <button id="test-notify" class="btn small" type="button">Send a test reminder</button>
+
+      <div id="install-box" class="install-box" hidden>
+        <h3>📲 Remi on your home screen</h3>
+        <p id="install-text" class="muted small"></p>
+        <button id="install-btn" class="btn small primary" type="button" hidden>Add Remi to home screen</button>
+      </div>
 
       <h3>Rewards</h3>
       <div class="setting-row">

@@ -917,3 +917,9 @@ body.sheet-open { overflow: hidden; }
 #chat-send.stop { background: var(--muted); }
 .coins-select { width: 90px; flex: none; }
 @media (prefers-reduced-motion: reduce) { .chat, .chat-fab, .msg.thinking { animation: none; } }
+
+/* ---------- install ---------- */
+.install-box { margin-top: 18px; padding: 10px 12px; border: 2px dashed var(--accent); border-radius: 12px; background: var(--accent-soft); }
+.install-box h3 { margin: 0 0 4px; }
+.install-box p { margin: 0 0 8px; }
+.install-box a { color: var(--accent-dark); font-weight: 600; }
