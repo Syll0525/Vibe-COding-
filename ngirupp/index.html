@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ngirupp Tuak</title>
+<meta name="description" content="Ngirupp — handcrafted Yearly-Based Tuak from Kuching, Sarawak. Flavoured tuak, event & wedding bar service with tuak cocktails on tap, and door gifts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #dcd9cf;
+    --bg-2: #d1cec3;
+    --card: #e6e3da;
+    --ink: #1652d9;
+    --ink-deep: #0d3aa6;
+    --text: #1e2a4a;
+    --muted: #4c5675;
+    --dark: #14161c;
+    --line: rgba(22, 82, 217, .25);
+    --radius: 14px;
+    --serif: "Bodoni Moda", "Didot", Georgia, serif;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  .wrap { width: min(1160px, 100% - 32px); margin-inline: auto; }
+
+  /* ---------- Nav ---------- */
+  header.nav {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+  .logo {
+    font-family: var(--serif); font-weight: 700; font-size: 1.6rem;
+    color: var(--ink); text-decoration: none; letter-spacing: .02em;
+  }
+  .logo small { font-family: var(--sans); font-size: .65rem; letter-spacing: .25em; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  .nav nav { display: flex; gap: 26px; }
+  .nav nav a { text-decoration: none; color: var(--ink); font-weight: 500; font-size: .92rem; }
+  .nav nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .menu-btn { display: none; background: none; border: 1px solid var(--ink); color: var(--ink); border-radius: 999px; padding: 6px 14px; font: 600 .85rem var(--sans); cursor: pointer; }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 56px 0 72px; overflow: hidden; }
+  .hero .wrap { display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 32px; }
+  .hero h1 {
+    font-family: var(--serif); font-weight: 400; color: var(--ink);
+    font-size: clamp(4rem, 13vw, 10.5rem); line-height: .82; margin: 0;
+    letter-spacing: -.03em;
+  }
+  .hero .tagline { color: var(--ink); font-weight: 600; font-size: .9rem; margin: 0 0 18px; }
+  .hero .sub { font-family: var(--serif); font-variant: small-caps; color: var(--ink); font-weight: 700; letter-spacing: .08em; font-size: 1.3rem; margin: 18px 0 8px; }
+  .hero p.lead { max-width: 46ch; color: var(--muted); margin: 0 0 28px; }
+  .hero-art { position: relative; justify-self: center; }
+  .hero-art .oval {
+    width: min(300px, 70vw); aspect-ratio: 3 / 4.2; border-radius: 50%;
+    overflow: hidden; transform: rotate(-8deg); box-shadow: 0 30px 60px -30px rgba(0,0,0,.45);
+  }
+  .hero-art .oval img { width: 100%; height: 100%; object-fit: cover; transform: rotate(8deg) scale(1.15); }
+  .order-ring {
+    position: absolute; right: -110px; bottom: 10px; width: 150px; height: 105px; background: var(--bg); border-radius: 50%;
+    display: grid; place-items: center; text-decoration: none;
+    font-family: var(--serif); font-weight: 600; color: var(--dark); text-align: center; line-height: 1.1; font-size: 1.15rem;
+  }
+  .order-ring::before, .order-ring::after {
+    content: ""; position: absolute; inset: 0; border: 2px solid var(--ink); border-radius: 50%; transform: rotate(-12deg);
+  }
+  .order-ring::after { inset: 6px -4px 0 8px; transform: rotate(-4deg); }
+  .order-ring:hover { color: var(--ink); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ink); color: #fff; text-decoration: none; border: 0; cursor: pointer;
+    padding: 13px 24px; border-radius: 999px; font: 600 .95rem var(--sans);
+    transition: background .2s, transform .2s;
+  }
+  .btn:hover { background: var(--ink-deep); transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+  .btn.ghost:hover { background: var(--ink); color: #fff; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ---------- Sections ---------- */
+  section { padding: 88px 0; }
+  section.alt { background: var(--bg-2); }
+  .eyebrow { color: var(--ink); font-weight: 600; letter-spacing: .2em; font-size: .75rem; text-transform: uppercase; margin: 0 0 10px; }
+  h2 {
+    font-family: var(--serif); font-weight: 400; color: var(--ink);
+    font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; margin: 0 0 16px; letter-spacing: -.02em;
+  }
+  .section-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; margin-bottom: 40px; }
+  .section-head p { max-width: 52ch; color: var(--muted); margin: 0; }
+
+  /* ---------- Flavours ---------- */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
+    padding: 7px 16px; border-radius: 999px; font: 500 .85rem var(--sans); cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+  .card {
+    background: var(--card); border-radius: var(--radius); overflow: hidden;
+    display: flex; flex-direction: column; border: 1px solid rgba(0,0,0,.04);
+    transition: transform .25s, box-shadow .25s;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 24px 40px -24px rgba(13, 58, 166, .45); }
+  .card .photo { position: relative; aspect-ratio: 4 / 4.2; background: var(--dark); }
+  .card .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .badge {
+    position: absolute; top: 12px; left: 12px; background: var(--ink); color: #fff;
+    font-size: .7rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 999px;
+  }
+  .badge.batch { left: auto; right: 12px; background: rgba(255,255,255,.9); color: var(--ink); }
+  .card .body { padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .card h3 {
+    font-family: var(--serif); font-variant: small-caps; color: var(--ink);
+    font-weight: 700; font-size: 1.35rem; letter-spacing: .03em; margin: 0; line-height: 1.15;
+  }
+  .specs { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: .85rem; margin: 0; }
+  .specs dt { color: var(--muted); }
+  .specs dd { margin: 0; color: var(--ink); font-weight: 500; text-align: right; }
+  .sweet { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 6px; }
+  .sweet i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); }
+  .sweet i.on { background: var(--ink); }
+  .card .desc { font-size: .9rem; color: var(--text); margin: 0; }
+  .prices { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .price {
+    font-family: var(--serif); font-weight: 700; color: var(--ink); font-size: .95rem;
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; line-height: 1.2;
+  }
+  .price small { display: block; font-family: var(--sans); font-weight: 500; font-size: .7rem; color: var(--muted); letter-spacing: .05em; }
+  .note { font-size: .8rem; color: var(--muted); margin-top: 28px; }
+
+  /* ---------- Services ---------- */
+  .service { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  .service.reverse .service-media { order: 2; }
+  .service-media {
+    position: relative; border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 3.4; background: var(--dark);
+  }
+  .service-media .tap {
+    position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  }
+  .service-media .tap img { width: 100%; height: 100%; object-fit: cover; }
+  .service-media .label {
+    position: absolute; left: 18px; bottom: 18px; right: 18px;
+    background: rgba(220, 217, 207, .94); color: var(--ink); border-radius: 10px; padding: 12px 16px;
+    font-family: var(--serif); font-weight: 700; font-variant: small-caps; font-size: 1.15rem; letter-spacing: .04em;
+  }
+  .features { list-style: none; padding: 0; margin: 24px 0 30px; display: grid; gap: 14px; }
+  .features li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .features .ico {
+    width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--ink); color: var(--ink);
+    display: grid; place-items: center; font-weight: 700; font-size: .85rem;
+  }
+  .features strong { display: block; color: var(--ink); }
+  .features span { color: var(--muted); font-size: .92rem; }
+  .packages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 0 0 28px; }
+  .pkg { background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--line); }
+  .pkg h4 { margin: 0 0 6px; font-family: var(--serif); color: var(--ink); font-size: 1.1rem; }
+  .pkg p { margin: 0; font-size: .85rem; color: var(--muted); }
+
+  /* ---------- Location ---------- */
+  .loc { display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: stretch; }
+  .loc-info { background: var(--card); border-radius: var(--radius); padding: 32px; display: flex; flex-direction: column; gap: 18px; }
+  .loc-info h3 { font-family: var(--serif); color: var(--ink); font-size: 1.8rem; margin: 0; font-weight: 600; }
+  .loc-info p { margin: 0; color: var(--muted); }
+  .map { border-radius: var(--radius); overflow: hidden; min-height: 380px; border: 1px solid var(--line); }
+  .map iframe { width: 100%; height: 100%; min-height: 380px; border: 0; display: block; }
+
+  /* ---------- Enquiry ---------- */
+  form.enquire { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: var(--card); padding: 32px; border-radius: var(--radius); }
+  form.enquire label { display: grid; gap: 6px; font-size: .85rem; font-weight: 500; color: var(--ink); }
+  form.enquire .full { grid-column: 1 / -1; }
+  form.enquire input, form.enquire select, form.enquire textarea {
+    font: 400 .95rem var(--sans); color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; width: 100%;
+  }
+  form.enquire input:focus, form.enquire select:focus, form.enquire textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+  form.enquire textarea { min-height: 110px; resize: vertical; }
+  .form-msg { font-size: .85rem; color: var(--muted); margin: 0; }
+
+  /* ---------- Footer ---------- */
+  footer { background: var(--ink); color: #e9ecf8; padding: 48px 0 32px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: end; }
+  footer .logo { color: #fff; font-size: 2.4rem; }
+  footer p { margin: 4px 0 0; font-size: .85rem; opacity: .85; }
+  footer .legal { width: 100%; border-top: 1px solid rgba(255,255,255,.25); padding-top: 18px; margin-top: 12px; font-size: .78rem; opacity: .75; }
+
+  /* ---------- Age gate ---------- */
+  .gate {
+    position: fixed; inset: 0; z-index: 50; background: rgba(20, 22, 28, .82); backdrop-filter: blur(6px);
+    display: grid; place-items: center; padding: 16px;
+  }
+  .gate[hidden] { display: none; }
+  .gate-box { background: var(--bg); border-radius: 18px; padding: 36px 28px; max-width: 420px; text-align: center; }
+  .gate-box .logo { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+  .gate-box p { color: var(--muted); margin: 0 0 24px; }
+  .gate-box .btn-row { justify-content: center; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .hero .wrap, .service, .loc { grid-template-columns: 1fr; }
+    .service.reverse .service-media { order: 0; }
+    .hero-art { margin-top: 12px; }
+    .order-ring { right: -60px; bottom: -20px; width: 130px; height: 92px; font-size: .95rem; }
+    .packages { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .nav nav {
+      display: none; position: absolute; top: 64px; left: 0; right: 0; flex-direction: column; gap: 0;
+      background: var(--bg); border-bottom: 1px solid var(--line);
+    }
+    .nav nav.open { display: flex; }
+    .nav nav a { padding: 14px 16px; border-top: 1px solid var(--line); }
+    .menu-btn { display: inline-block; }
+    section { padding: 64px 0; }
+    form.enquire { grid-template-columns: 1fr; padding: 22px; }
+    .order-ring { right: -10px; bottom: -30px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .card, .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <div class="gate-box">
+    <span class="logo">Ngirupp</span>
+    <h2 id="gate-title" style="font-size:1.6rem;margin-bottom:10px">Are you 18 or older?</h2>
+    <p>Our tuak is an alcoholic beverage. Please confirm you are of legal drinking age to continue.</p>
+    <div class="btn-row">
+      <button class="btn" id="gate-yes">Yes, I'm 18+</button>
+      <a class="btn ghost" href="https://www.google.com">No</a>
+    </div>
+  </div>
+</div>
+
+<header class="nav">
+  <div class="wrap">
+    <a href="#top" class="logo">Ngirupp<small>TUAK</small></a>
+    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav id="site-nav">
+      <a href="#flavours">Flavours</a>
+      <a href="#bar">Event Bar</a>
+      <a href="#door-gifts">Door Gifts</a>
+      <a href="#location">Location</a>
+      <a href="#enquire">Order</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="tagline">“Reminder Of Culture”</p>
+        <h1>Ngirupp<br>Tuak</h1>
+        <p class="sub">Yearly-Based Tuak · Kuching, Sarawak</p>
+        <p class="lead">Handcrafted rice wine inspired by the longhouse tradition, fermented with our own ragi and reimagined with local flavours — from pandan and chrysanthemum to Sarawak Liberica coffee.</p>
+        <div class="btn-row">
+          <a class="btn" href="#flavours">Explore flavours</a>
+          <a class="btn ghost" href="#bar">Book our tuak bar</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <div class="oval"><img src="images/hero.jpg" alt="A hand holding a bottle of Ngirupp tuak"></div>
+        <a class="order-ring" href="#enquire">ORDER<br>NOW !</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Flavours -->
+  <section id="flavours" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Flavour list</p>
+          <h2>Our Tuak</h2>
+          <p>Every bottle is 18% ABV. Sweetness runs from LVL 1 (dry) to LVL 3 (sweet).</p>
+        </div>
+        <div class="filters" role="group" aria-label="Filter flavours">
+          <button class="chip" data-filter="all" aria-pressed="true">All</button>
+          <button class="chip" data-filter="classic" aria-pressed="false">Classic</button>
+          <button class="chip" data-filter="special" aria-pressed="false">Special Collection</button>
+        </div>
+      </div>
+      <div class="grid" id="flavour-grid"></div>
+      <p class="note">Prices in Malaysian Ringgit (RM). Availability depends on batch — message us to check stock.</p>
+    </div>
+  </section>
+
+  <!-- Event / Wedding Bar -->
+  <section id="bar">
+    <div class="wrap service">
+      <div class="service-media">
+        <div class="tap">
+          <img src="images/original.jpg" alt="">
+          <img src="images/cinnamon.jpg" alt="">
+          <img src="images/mandarin.jpg" alt="">
+        </div>
+        <div class="label">Tuak Cocktails On Tap</div>
+      </div>
+      <div>
+        <p class="eyebrow">Service</p>
+        <h2>Event &amp; Wedding Bar</h2>
+        <p>Bring the Ngirupp bar to your big day. We set up a mobile tuak bar with our flavours on tap and mix signature tuak cocktails for your guests — a memorable, local twist for weddings, Gawai and festive gatherings, birthdays and corporate events.</p>
+        <ul class="features">
+          <li><span class="ico">1</span><div><strong>Tuak cocktails on tap</strong><span>Signature cocktails built on our flavoured tuak, poured fresh all night.</span></div></li>
+          <li><span class="ico">2</span><div><strong>Bar setup &amp; bartenders</strong><span>We bring the bar, the taps and the crew — you enjoy the party.</span></div></li>
+          <li><span class="ico">3</span><div><strong>Custom menu</strong><span>Pick the flavours and sweetness to match your theme and your crowd.</span></div></li>
+        </ul>
+        <div class="packages">
+          <div class="pkg"><h4>Wedding</h4><p>Reception bar with a custom cocktail menu.</p></div>
+          <div class="pkg"><h4>Private Party</h4><p>Birthdays, Gawai, festive open houses.</p></div>
+          <div class="pkg"><h4>Corporate</h4><p>Launches, dinners and company events.</p></div>
+        </div>
+        <a class="btn" href="#enquire" data-service="Event / Wedding Bar Service">Get a quote</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Door gifts -->
+  <section id="door-gifts" class="alt">
+    <div class="wrap service reverse">
+      <div class="service-media">
+        <div class="tap">
+          <img src="images/jasmine.jpg" alt="">
+          <img src="images/chrysanthemum.jpg" alt="">
+          <img src="images/sour-plum.jpg" alt="">
+        </div>
+        <div class="label">Door Gifts &amp; Corporate Gifting</div>
+      </div>
+      <div>
+        <p class="eyebrow">Service</p>
+        <h2>Door Gifts</h2>
+        <p>Send your guests home with a taste of Sarawak. Our 200ml bottles make a meaningful door gift for weddings, celebrations and corporate events — a little reminder of culture.</p>
+        <ul class="features">
+          <li><span class="ico">1</span><div><strong>Mini bottles</strong><span>200ml bottles in your choice of flavours.</span></div></li>
+          <li><span class="ico">2</span><div><strong>Personalised labels &amp; tags</strong><span>Names, dates or your company logo on the bottle.</span></div></li>
+          <li><span class="ico">3</span><div><strong>Bulk orders</strong><span>Tell us your guest count and date — we'll prepare a quote.</span></div></li>
+        </ul>
+        <a class="btn" href="#enquire" data-service="Door Gifts">Enquire about door gifts</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Location -->
+  <section id="location">
+    <div class="wrap">
+      <p class="eyebrow">Find us</p>
+      <h2>Location</h2>
+      <div class="loc">
+        <div class="loc-info">
+          <h3>Chuang / Ngirupp Tuak</h3>
+          <p>Handcrafted in Kuching, Sarawak. Drop by to taste our latest batch and pick up a bottle.</p>
+          <div class="btn-row">
+            <a class="btn" href="https://share.google/SkyjRGjwyOohNs9KV" target="_blank" rel="noopener">Open in Google Maps</a>
+            <a class="btn ghost" href="https://www.google.com/maps/dir/?api=1&amp;destination=Ngirupp+Tuak+Chuang+Kuching" target="_blank" rel="noopener">Get directions</a>
+          </div>
+        </div>
+        <div class="map">
+          <iframe title="Map to Chuang / Ngirupp Tuak" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps?q=Ngirupp+Tuak+Chuang+Kuching+Sarawak&amp;output=embed"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Enquiry / order -->
+  <section id="enquire" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Order &amp; enquiries</p>
+          <h2>Order Now</h2>
+          <p>Tell us what you'd like and we'll get back to you to confirm stock, pickup or delivery, and quotes for events and door gifts.</p>
+        </div>
+      </div>
+      <form class="enquire" id="enquire-form">
+        <label>Name<input name="name" required autocomplete="name"></label>
+        <label>Phone<input name="phone" type="tel" required autocomplete="tel"></label>
+        <label>I'm interested in
+          <select name="service" id="service-select">
+            <option>Bottle order</option>
+            <option>Event / Wedding Bar Service</option>
+            <option>Door Gifts</option>
+          </select>
+        </label>
+        <label>Event date (if any)<input name="date" type="date"></label>
+        <label class="full">Message
+          <textarea name="message" placeholder="e.g. 2 × Sour Plum 500ml, 1 × Pandan Chiffon 750ml — or event details, guest count, venue"></textarea>
+        </label>
+        <div class="full btn-row" style="align-items:center">
+          <button class="btn" type="submit">Send via WhatsApp</button>
+          <p class="form-msg" id="form-msg"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a href="#top" class="logo">Ngirupp</a>
+      <p>Yearly-Based Tuak · Handcrafted in Kuching, Sarawak</p>
+      <p>“Reminder Of Culture”</p>
+    </div>
+    <div class="btn-row">
+      <a class="btn ghost" style="color:#fff;border-color:#fff" href="#flavours">Flavours</a>
+      <a class="btn ghost" style="color:#fff;border-color:#fff" href="#location">Visit us</a>
+    </div>
+    <p class="legal">For persons aged 18 and above only. Please drink responsibly. © <span id="year"></span> Ngirupp Tuak.</p>
+  </div>
+</footer>
+
+<script>
+  // ---- Settings: put Ngirupp's WhatsApp number here (country code, digits only, e.g. "60123456789") ----
+  const WHATSAPP_NUMBER = "";
+
+  const STD = [["200ml", 35], ["500ml", 75], ["750ml", 98]];
+  const SPECIAL = [["200ml", 40], ["500ml", 90]];
+
+  const FLAVOURS = [
+    { name: "Original Flavor", img: "original.jpg", batch: "#Batch 1 2023", sweet: 1, ingredients: "Mix Ragi", type: "classic", prices: STD,
+      desc: "You can still taste the smooth flavour of fermented rice in the tuak, with no lingering aftertaste. It pairs perfectly with any dish, hitting your throat with a pleasant warmth." },
+    { name: "Pandan Chiffon Flavour", img: "pandan.jpg", batch: "#Batch 1 2023", sweet: 3, ingredients: "Fresh Pandan Leaves", type: "classic", prices: STD,
+      desc: "Fresh blended pandan leaves in our fermentation give it the aroma of Pandan Chiffon Cake — not over sweet, just a perfect balance that ends with the taste of tuak." },
+    { name: "Chrysanthemum Flavor", img: "chrysanthemum.jpg", batch: "#Batch 2 2023", sweet: 2, ingredients: "Dry Chrysanthemum Flowers", type: "classic", prices: STD,
+      desc: "Each sip hits with the distinct taste of tuak, followed by a strong chrysanthemum flavour in the middle, and finishes with a bitterness reminiscent of fresh, hot Chinese tea." },
+    { name: "Jasmine Tea Flavor", img: "jasmine.jpg", batch: "#Batch 3 2024", sweet: 1, ingredients: "Imported Tea Leaves", type: "classic", prices: STD,
+      desc: "A light jasmine taste hits first, followed by the smooth flavour of tuak. It subtly feels like drinking tea with just the right amount of alcohol — not too strong and easy to consume. It would definitely appeal to tea lovers." },
+    { name: "Burn Cinnamon Flavor", img: "cinnamon.jpg", batch: "#Batch 3 2024", sweet: 3, ingredients: "Burnt Cinnamon Stick", type: "classic", prices: STD,
+      desc: "Inspired by whiskey fermentation in the oak, it can also be described as having the flavour of a cinnamon roll with a slightly smoky finish." },
+    { name: "Mandarin Oranges Flavor", img: "mandarin.jpg", batch: "#Batch 3 2024", sweet: 3, ingredients: "Mandarin & Tangerine Peel", type: "special", prices: SPECIAL,
+      desc: "The mandarin peel adds a lovely fragrance to both the aroma and taste, with a slight fizzy mandarin orange flavour. You can still feel the oil from the peel, and the tuak taste follows smoothly afterward." },
+    { name: "Sour Plum Flavor", img: "sour-plum.jpg", batch: "#Batch 3 2024", sweet: 3, ingredients: "Salted & Sweet Sour Plum", type: "special", prices: SPECIAL, tag: "Popular",
+      desc: "Our umeshu version of tuak balances a gentle sourness that's not too sharp, with a touch of sweetness from the sour plum itself. It's one of our most popular flavours." },
+    { name: "Sarawak Liberica Coffee", img: "liberica.jpg", batch: "#Batch 5 2025", sweet: 2, ingredients: "Sarawak Local Beans", type: "special", prices: [["500ml", 98]], tag: "New",
+      desc: "Sarawak Liberica beans from a local farm create a coffee-espresso tuak with the taste and aroma of subtle Chinese medicine, accompanied by a mild sourness from the beans. Neither overly sweet nor overpowering the distinct taste of tuak." },
+  ];
+
+  const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const grid = document.getElementById("flavour-grid");
+
+  function render(filter) {
+    grid.innerHTML = FLAVOURS.filter(f => filter === "all" || f.type === filter).map(f => `
+      <article class="card">
+        <div class="photo">
+          <img src="images/${f.img}" alt="Bottle of Ngirupp ${esc(f.name)} tuak" loading="lazy">
+          ${f.type === "special" ? `<span class="badge">${f.tag ? esc(f.tag) + " · " : ""}Special</span>` : f.tag ? `<span class="badge">${esc(f.tag)}</span>` : ""}
+          <span class="badge batch">${esc(f.batch)}</span>
+        </div>
+        <div class="body">
+          <h3>${esc(f.name)}</h3>
+          <dl class="specs">
+            <dt>ABV</dt><dd>18%</dd>
+            <dt>Sweetness</dt><dd>LVL ${f.sweet}<span class="sweet" aria-hidden="true">${[1,2,3].map(i => `<i class="${i <= f.sweet ? "on" : ""}"></i>`).join("")}</span></dd>
+            <dt>Special ingredients</dt><dd>${esc(f.ingredients)}</dd>
+          </dl>
+          <p class="desc">${esc(f.desc)}</p>
+          <div class="prices">
+            ${f.prices.map(([size, rm]) => `<span class="price"><small>${size}</small>RM${rm}</span>`).join("")}
+          </div>
+        </div>
+      </article>`).join("");
+  }
+  render("all");
+
+  document.querySelectorAll(".chip").forEach(chip => chip.addEventListener("click", () => {
+    document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === chip));
+    render(chip.dataset.filter);
+  }));
+
+  // Mobile menu
+  const menuBtn = document.getElementById("menu-btn"), nav = document.getElementById("site-nav");
+  menuBtn.addEventListener("click", () => {
+    const open = nav.classList.toggle("open");
+    menuBtn.setAttribute("aria-expanded", open);
+  });
+  nav.addEventListener("click", e => { if (e.target.tagName === "A") { nav.classList.remove("open"); menuBtn.setAttribute("aria-expanded", false); } });
+
+  // Service buttons preselect the enquiry type
+  const select = document.getElementById("service-select");
+  document.querySelectorAll("[data-service]").forEach(a => a.addEventListener("click", () => { select.value = a.dataset.service; }));
+
+  // Enquiry -> WhatsApp
+  document.getElementById("enquire-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    const text = [
+      "Hi Ngirupp! I'd like to enquire.",
+      `Name: ${d.name}`, `Phone: ${d.phone}`, `Interested in: ${d.service}`,
+      d.date ? `Event date: ${d.date}` : "", d.message ? `Message: ${d.message}` : "",
+    ].filter(Boolean).join("\n");
+    const msg = document.getElementById("form-msg");
+    if (!WHATSAPP_NUMBER) {
+      msg.textContent = "WhatsApp ordering isn't set up yet — please visit us at our location above.";
+      return;
+    }
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    msg.textContent = "Opening WhatsApp…";
+  });
+
+  // Age gate (remembered for this browser)
+  const gate = document.getElementById("gate");
+  let verified = false;
+  try { verified = localStorage.getItem("ngirupp-18") === "1"; } catch (_) {}
+  if (!verified) gate.hidden = false;
+  document.getElementById("gate-yes").addEventListener("click", () => {
+    try { localStorage.setItem("ngirupp-18", "1"); } catch (_) {}
+    gate.hidden = true;
+  });
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
