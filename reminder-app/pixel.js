@@ -314,7 +314,7 @@ const Pixel = (() => {
 
   function drawBaby(ctx, x, y, look) {
     const ch = CHAR_BY_ID[look.species] || CHARACTERS[0];
-    const colors = { o: OUTLINE, e: EYE, ...ch.colors };
+    const colors = { o: OUTLINE, e: EYE, ...ch.colors, ...look.colors };
     const rows = [...(BABY_EARS[ch.id] || BABY_EARS.hamster), ...BABY_BODY];
     const bx = x + 2;
     const by = y + 4;
@@ -349,7 +349,7 @@ const Pixel = (() => {
       return;
     }
     const ch = CHAR_BY_ID[look.species] || CHARACTERS[0];
-    const colors = { o: OUTLINE, e: EYE, ...ch.colors };
+    const colors = { o: OUTLINE, e: EYE, ...ch.colors, ...look.colors };
     ch.rows.forEach((row, j) => {
       for (let i = 0; i < 16; i++) {
         const k = row[i];

@@ -889,6 +889,7 @@ const Pet = (() => {
 
   return {
     ensure, reward, takeBack, noteBonus, init, render, greet, lastGreet, encourage, info, diary,
+    log: (icon, text, extra) => logEvent(pet(), icon, text, extra),
     roleOf: () => roleOf(pet()), name: () => pet().name, stage: () => stageOf(pet()).id, STAGES, LIFESPAN_DAYS,
   };
 })();

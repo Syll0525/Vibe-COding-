@@ -98,6 +98,7 @@
             <span aria-hidden="true">💗</span>
             <div class="bar happy" role="progressbar" aria-label="Happiness" aria-valuemin="0" aria-valuemax="100"><span class="bar-happy"></span></div>
           </div>
+          <button class="btn small cafe-open" type="button" data-open-cafe>🏪 Go inside &amp; help at work</button>
         </div>
 
         <div class="today-head">
@@ -132,6 +133,7 @@
             <button type="button" data-act="pat"><span class="nub"></span>Pat</button>
             <button type="button" data-act="play"><span class="nub"></span>Play</button>
             <button type="button" data-act="ask"><span class="nub ask"></span>My day?</button>
+            <button type="button" data-open-cafe><span class="nub work"></span>Work</button>
           </div>
         </div>
 
@@ -332,6 +334,21 @@
   <!-- first-time setup -->
   <div id="onboarding" class="onboarding" hidden></div>
 
+  <!-- inside the shop: serving mini-game -->
+  <div id="cafe" class="cafe" role="dialog" aria-label="Inside the shop" hidden>
+    <div class="cafe-head">
+      <button id="cafe-back" class="icon-btn" type="button" aria-label="Back">←</button>
+      <b id="cafe-title">Inside</b>
+      <span id="cafe-timer" class="cafe-timer"></span>
+      <span id="cafe-earned" class="cafe-earned"></span>
+    </div>
+    <div class="cafe-stage">
+      <canvas id="cafe-canvas" width="128" height="160" aria-label="Inside your buddy's shop. Customers sit at the tables."></canvas>
+      <div id="cafe-bubbles" class="cafe-bubbles"></div>
+    </div>
+    <div id="cafe-panel" class="cafe-panel"></div>
+  </div>
+
   <!-- Ask Remi -->
   <button id="chat-fab" class="chat-fab" type="button" aria-label="Ask Remi" aria-expanded="false">
     <canvas class="pix" width="20" height="20" aria-hidden="true"></canvas>
@@ -358,5 +375,6 @@
   <script src="sfx.js"></script>
   <script src="app.js"></script>
   <script src="chat.js"></script>
+  <script src="cafe.js"></script>
 </body>
 </html>
