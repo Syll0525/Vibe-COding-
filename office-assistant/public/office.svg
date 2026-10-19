@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" id="office" role="img" aria-label="Your office: Maya from Marketing at her desk, with two empty desks for future hires">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6efe2"/><stop offset="1" stop-color="#eadfca"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c99a69"/><stop offset="1" stop-color="#a87849"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7cc4f2"/><stop offset="1" stop-color="#d9f0ff"/>
+    </linearGradient>
+    <linearGradient id="screenGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#312e81"/><stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfaf5"/><stop offset="1" stop-color="#e7dfd2"/>
+    </linearGradient>
+    <radialGradient id="rug" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#7c3aed"/>
+    </radialGradient>
+    <clipPath id="tvClip"><rect x="440" y="98" width="320" height="190" rx="6"/></clipPath>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity="0.18"/></filter>
+  </defs>
+
+  <!-- Room -->
+  <rect width="1200" height="470" fill="url(#wall)"/>
+  <rect y="455" width="1200" height="18" fill="#d8c8ac"/>
+  <rect y="470" width="1200" height="230" fill="url(#floor)"/>
+  <g stroke="#9a6b3e" stroke-width="2" opacity="0.45">
+    <line x1="0" y1="520" x2="1200" y2="520"/><line x1="0" y1="580" x2="1200" y2="580"/><line x1="0" y1="645" x2="1200" y2="645"/>
+    <line x1="180" y1="470" x2="160" y2="520"/><line x1="520" y1="520" x2="505" y2="580"/><line x1="880" y1="470" x2="870" y2="520"/>
+    <line x1="300" y1="580" x2="285" y2="645"/><line x1="1000" y1="580" x2="990" y2="645"/><line x1="700" y1="645" x2="690" y2="700"/>
+  </g>
+
+  <!-- Windows with city view -->
+  <g id="windows">
+    <g transform="translate(40 70)">
+      <rect width="250" height="240" rx="8" fill="#fff" filter="url(#soft)"/>
+      <rect x="12" y="12" width="226" height="216" fill="url(#sky)"/>
+      <circle cx="190" cy="60" r="22" fill="#fde68a"/>
+      <g fill="#8fa9c4"><rect x="20" y="130" width="40" height="98"/><rect x="66" y="100" width="34" height="128"/><rect x="106" y="150" width="46" height="78"/><rect x="158" y="118" width="30" height="110"/><rect x="194" y="160" width="40" height="68"/></g>
+      <g fill="#dbeafe" opacity="0.8"><rect x="74" y="112" width="6" height="8"/><rect x="86" y="112" width="6" height="8"/><rect x="74" y="130" width="6" height="8"/><rect x="164" y="132" width="6" height="8"/><rect x="176" y="150" width="6" height="8"/><rect x="28" y="146" width="6" height="8"/></g>
+      <rect x="123" y="12" width="5" height="216" fill="#fff"/><rect x="12" y="118" width="226" height="5" fill="#fff"/>
+      <rect x="-6" y="234" width="262" height="12" rx="4" fill="#e2d6c0"/>
+    </g>
+    <g transform="translate(910 70)">
+      <rect width="250" height="240" rx="8" fill="#fff" filter="url(#soft)"/>
+      <rect x="12" y="12" width="226" height="216" fill="url(#sky)"/>
+      <g fill="#fff" opacity="0.9"><ellipse cx="70" cy="56" rx="34" ry="12"/><ellipse cx="96" cy="48" rx="24" ry="12"/></g>
+      <g fill="#7f9bb8"><rect x="16" y="150" width="50" height="78"/><rect x="72" y="96" width="38" height="132"/><polygon points="91,70 80,96 102,96"/><rect x="118" y="140" width="44" height="88"/><rect x="168" y="112" width="64" height="116"/></g>
+      <rect x="123" y="12" width="5" height="216" fill="#fff"/><rect x="12" y="118" width="226" height="5" fill="#fff"/>
+      <rect x="-6" y="234" width="262" height="12" rx="4" fill="#e2d6c0"/>
+    </g>
+  </g>
+
+  <!-- Office sign -->
+  <g transform="translate(470 22)">
+    <rect width="260" height="54" rx="27" fill="#1f2937" filter="url(#soft)"/>
+    <text x="130" y="36" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="24" font-weight="700" fill="#fbbf24" letter-spacing="2">MY OFFICE</text>
+  </g>
+
+  <!-- Wall clock -->
+  <g transform="translate(835 130)">
+    <circle r="34" fill="#fff" stroke="#374151" stroke-width="5"/>
+    <g stroke="#374151" stroke-width="3" stroke-linecap="round"><line x1="0" y1="0" x2="0" y2="-20" id="clockHour"/><line x1="0" y1="0" x2="15" y2="6" id="clockMin"/></g>
+    <circle r="3" fill="#ef4444"/>
+  </g>
+
+  <!-- Maya's big wall screen: shows what she is working on -->
+  <g id="wallScreen" filter="url(#soft)">
+    <rect x="430" y="88" width="340" height="210" rx="12" fill="#111827"/>
+    <rect x="440" y="98" width="320" height="190" rx="6" fill="url(#screenGlow)"/>
+    <g clip-path="url(#tvClip)">
+      <!-- idle -->
+      <g class="screen-view" data-view="idle">
+        <text x="600" y="178" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="30" font-weight="700" fill="#fff">Marketing Team</text>
+        <text x="600" y="212" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="16" fill="#c4b5fd">Click Maya to give her a task</text>
+        <g fill="#fbbf24"><circle cx="560" cy="246" r="6"/><circle cx="600" cy="246" r="6" opacity="0.6"/><circle cx="640" cy="246" r="6" opacity="0.3"/></g>
+      </g>
+      <!-- chrome -->
+      <g class="screen-view" data-view="chrome" style="display:none">
+        <rect x="440" y="98" width="320" height="190" fill="#f1f5f9"/>
+        <rect x="440" y="98" width="320" height="34" fill="#dbe3ec"/>
+        <rect x="452" y="106" width="90" height="26" rx="6" fill="#f1f5f9"/><rect x="548" y="108" width="80" height="22" rx="6" fill="#cbd5e1"/><rect x="634" y="108" width="80" height="22" rx="6" fill="#cbd5e1"/>
+        <rect x="456" y="142" width="288" height="22" rx="11" fill="#fff" stroke="#cbd5e1"/>
+        <text x="470" y="158" font-family="Segoe UI, sans-serif" font-size="12" fill="#475569" id="screenUrl">opening tabs…</text>
+        <g transform="translate(600 222)"><circle r="30" fill="#ea4335"/><path d="M0 0 L26 -15 A30 30 0 0 1 26 15 Z" fill="#34a853" transform="rotate(120)"/><path d="M0 0 L26 -15 A30 30 0 0 1 26 15 Z" fill="#fbbc05" transform="rotate(240)"/><circle r="13" fill="#fff"/><circle r="10" fill="#4285f4"/></g>
+        <rect x="470" y="262" width="60" height="6" rx="3" fill="#cbd5e1" class="blink"/>
+      </g>
+      <!-- design -->
+      <g class="screen-view" data-view="design" style="display:none">
+        <rect x="440" y="98" width="320" height="190" fill="#fdf2f8"/>
+        <rect x="470" y="114" width="120" height="120" rx="8" fill="#7c3aed"/><text x="530" y="170" text-anchor="middle" font-family="Poppins, sans-serif" font-size="18" font-weight="800" fill="#fff">SALE</text><rect x="495" y="188" width="70" height="18" rx="9" fill="#facc15"/>
+        <rect x="606" y="114" width="64" height="120" rx="8" fill="#0d9488"/><rect x="684" y="114" width="60" height="56" rx="8" fill="#f97316"/><rect x="684" y="178" width="60" height="56" rx="8" fill="#2563eb"/>
+        <g><circle cx="480" cy="262" r="9" fill="#ef4444"/><circle cx="504" cy="262" r="9" fill="#facc15"/><circle cx="528" cy="262" r="9" fill="#22c55e"/><circle cx="552" cy="262" r="9" fill="#3b82f6"/></g>
+        <path d="M700 250 l30 -30 l8 8 l-30 30 z" fill="#1f2937" class="wiggle"/>
+      </g>
+      <!-- video -->
+      <g class="screen-view" data-view="video" style="display:none">
+        <rect x="440" y="98" width="320" height="190" fill="#0f172a"/>
+        <rect x="560" y="108" width="80" height="128" rx="6" fill="#334155"/><polygon points="590,152 590,192 622,172" fill="#fff"/>
+        <rect x="456" y="246" width="288" height="12" rx="3" fill="#1e293b"/>
+        <rect x="456" y="246" width="70" height="12" rx="3" fill="#a855f7"/><rect x="530" y="246" width="110" height="12" rx="3" fill="#22d3ee"/><rect x="644" y="246" width="60" height="12" rx="3" fill="#f472b6"/>
+        <rect x="456" y="264" width="200" height="10" rx="3" fill="#facc15" opacity="0.8"/>
+        <rect x="520" y="240" width="3" height="40" fill="#ef4444" class="scrub"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Whiteboard -->
+  <g transform="translate(320 150)">
+    <rect width="96" height="120" rx="6" fill="#fff" stroke="#9ca3af" stroke-width="4"/>
+    <text x="48" y="22" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#374151">THIS WEEK</text>
+    <rect x="10" y="32" width="34" height="30" fill="#fde68a" transform="rotate(-4 27 47)"/><rect x="52" y="32" width="34" height="30" fill="#fbcfe8" transform="rotate(3 69 47)"/>
+    <rect x="10" y="72" width="34" height="30" fill="#bbf7d0" transform="rotate(2 27 87)"/><rect x="52" y="72" width="34" height="30" fill="#bfdbfe" transform="rotate(-3 69 87)"/>
+  </g>
+
+  <!-- Rug -->
+  <ellipse cx="600" cy="620" rx="330" ry="58" fill="url(#rug)" opacity="0.55"/>
+
+  <!-- Hiring desk: Sales (left, back row) -->
+  <g id="desk-sales" class="desk hiring" data-role="Sales" transform="translate(70 395)">
+    <rect x="70" y="10" width="70" height="80" rx="16" fill="#9ca3af"/>
+    <rect x="0" y="70" width="210" height="16" rx="4" fill="url(#desk)" stroke="#cfc4b3"/>
+    <rect x="12" y="86" width="10" height="66" fill="#9c8f7c"/><rect x="188" y="86" width="10" height="66" fill="#9c8f7c"/>
+    <rect x="60" y="22" width="90" height="48" rx="4" fill="#4b5563"/><rect x="99" y="62" width="12" height="10" fill="#4b5563"/>
+    <g transform="translate(105 -30)">
+      <rect x="-62" y="-18" width="124" height="34" rx="8" fill="#fff" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6 4"/>
+      <text y="5" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#b45309">Sales · Hiring</text>
+    </g>
+  </g>
+
+  <!-- Hiring desk: Finance (right, back row) -->
+  <g id="desk-finance" class="desk hiring" data-role="Finance" transform="translate(920 395)">
+    <rect x="70" y="10" width="70" height="80" rx="16" fill="#9ca3af"/>
+    <rect x="0" y="70" width="210" height="16" rx="4" fill="url(#desk)" stroke="#cfc4b3"/>
+    <rect x="12" y="86" width="10" height="66" fill="#9c8f7c"/><rect x="188" y="86" width="10" height="66" fill="#9c8f7c"/>
+    <rect x="60" y="22" width="90" height="48" rx="4" fill="#4b5563"/><rect x="99" y="62" width="12" height="10" fill="#4b5563"/>
+    <g transform="translate(105 -30)">
+      <rect x="-70" y="-18" width="140" height="34" rx="8" fill="#fff" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6 4"/>
+      <text y="5" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#b45309">Finance · Hiring</text>
+    </g>
+  </g>
+
+  <!-- Marketing desk with Maya (front, centre) -->
+  <g id="desk-marketing" class="desk active" data-role="Marketing">
+    <!-- chair back -->
+    <rect x="548" y="372" width="104" height="130" rx="26" fill="#4c1d95"/>
+    <!-- Maya -->
+    <g id="maya">
+      <path d="M548 520 Q548 432 600 428 Q652 432 652 520 Z" fill="#7c3aed"/>
+      <path d="M586 430 L600 456 L614 430 Z" fill="#fff"/>
+      <rect x="592" y="408" width="16" height="22" fill="#b07a53"/>
+      <circle cx="600" cy="384" r="34" fill="#c68b5f"/>
+      <path d="M566 384 Q564 344 600 342 Q640 342 636 386 Q628 360 600 360 Q576 362 566 384 Z" fill="#2b1a12"/>
+      <circle cx="600" cy="336" r="16" fill="#2b1a12"/>
+      <circle cx="588" cy="388" r="3.5" fill="#1f2937" class="eye"/><circle cx="612" cy="388" r="3.5" fill="#1f2937" class="eye"/>
+      <circle cx="580" cy="398" r="5" fill="#f9a8a8" opacity="0.6"/><circle cx="620" cy="398" r="5" fill="#f9a8a8" opacity="0.6"/>
+      <path d="M590 402 Q600 411 610 402" stroke="#7f1d1d" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="566" cy="390" r="4" fill="#fbbf24"/><circle cx="634" cy="390" r="4" fill="#fbbf24"/>
+      <!-- arms -->
+      <g id="mayaHands">
+        <path d="M556 470 Q540 500 572 512" stroke="#7c3aed" stroke-width="18" fill="none" stroke-linecap="round"/>
+        <path d="M644 470 Q660 500 628 512" stroke="#7c3aed" stroke-width="18" fill="none" stroke-linecap="round"/>
+        <circle cx="576" cy="512" r="9" fill="#c68b5f" class="hand-l"/><circle cx="624" cy="512" r="9" fill="#c68b5f" class="hand-r"/>
+      </g>
+    </g>
+    <!-- desk -->
+    <rect x="380" y="510" width="440" height="22" rx="5" fill="url(#desk)" stroke="#cfc4b3" filter="url(#soft)"/>
+    <rect x="396" y="532" width="14" height="96" fill="#9c8f7c"/><rect x="790" y="532" width="14" height="96" fill="#9c8f7c"/>
+    <rect x="410" y="532" width="120" height="70" rx="4" fill="#ede5d8" stroke="#cfc4b3"/><rect x="455" y="548" width="30" height="5" rx="2" fill="#9c8f7c"/><rect x="455" y="575" width="30" height="5" rx="2" fill="#9c8f7c"/>
+    <!-- laptop (back faces us) -->
+    <path d="M556 512 L564 470 L636 470 L644 512 Z" fill="#cbd5e1" stroke="#94a3b8"/>
+    <circle cx="600" cy="490" r="6" fill="#e2e8f0"/>
+    <!-- desk props -->
+    <g transform="translate(420 478)"><rect width="26" height="32" rx="4" fill="#f97316"/><path d="M26 8 q12 2 0 16" stroke="#f97316" stroke-width="5" fill="none"/><path d="M7 -4 q3 -6 0 -12 M17 -4 q3 -6 0 -12" stroke="#d1d5db" stroke-width="2" fill="none" class="steam"/></g>
+    <g transform="translate(470 488)"><rect width="44" height="22" rx="3" fill="#ec4899"/><rect x="4" y="4" width="36" height="14" rx="2" fill="#fbcfe8"/></g>
+    <g transform="translate(690 470)"><rect x="10" y="20" width="26" height="20" rx="3" fill="#a16207"/><path d="M23 22 q-18 -16 -10 -30 q12 8 10 30 q4 -24 20 -26 q2 16 -20 26" fill="#22c55e"/></g>
+    <g transform="translate(748 486)"><rect width="40" height="24" rx="4" fill="#1f2937"/><circle cx="20" cy="12" r="8" fill="#374151"/><circle cx="20" cy="12" r="4" fill="#60a5fa"/></g>
+    <!-- name plate -->
+    <g transform="translate(600 556)">
+      <rect x="-92" y="-18" width="184" height="38" rx="10" fill="#4c1d95" filter="url(#soft)"/>
+      <text y="7" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="16" font-weight="700" fill="#fff">Maya · Marketing</text>
+    </g>
+    <!-- speech bubble -->
+    <g id="mayaBubble" transform="translate(690 330)">
+      <path d="M0 0 h170 a14 14 0 0 1 14 14 v30 a14 14 0 0 1 -14 14 h-150 l-20 16 l4 -16 a14 14 0 0 1 -4 -10 v-34 a14 14 0 0 1 14 -14z" fill="#fff" stroke="#7c3aed" stroke-width="3" transform="translate(-14 0)"/>
+      <text id="mayaBubbleText" x="78" y="35" text-anchor="middle" font-family="Poppins, Segoe UI, sans-serif" font-size="15" font-weight="600" fill="#4c1d95">Hi! Click me 👋</text>
+    </g>
+  </g>
+
+  <!-- Coffee corner (right front) -->
+  <g transform="translate(1060 540)">
+    <rect x="-10" y="40" width="140" height="120" rx="6" fill="#e7dfd2" stroke="#cfc4b3"/>
+    <rect x="20" y="-20" width="60" height="64" rx="8" fill="#374151"/><rect x="32" y="-6" width="36" height="16" rx="3" fill="#60a5fa"/><rect x="40" y="22" width="20" height="16" fill="#f8fafc"/>
+  </g>
+
+  <!-- Plants -->
+  <g transform="translate(30 560)">
+    <path d="M10 40 L70 40 L62 110 L18 110 Z" fill="#c2410c"/>
+    <g fill="#16a34a"><ellipse cx="40" cy="10" rx="14" ry="38"/><ellipse cx="18" cy="20" rx="10" ry="30" transform="rotate(-30 18 20)"/><ellipse cx="62" cy="20" rx="10" ry="30" transform="rotate(30 62 20)"/></g>
+  </g>
+  <g transform="translate(330 600)">
+    <path d="M6 30 L50 30 L44 80 L12 80 Z" fill="#1d4ed8"/>
+    <g fill="#22c55e"><circle cx="28" cy="14" r="20"/><circle cx="12" cy="22" r="12"/><circle cx="44" cy="22" r="12"/></g>
+  </g>
+</svg>

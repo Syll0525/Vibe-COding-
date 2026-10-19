@@ -1,5 +1,7 @@
 # 🐱 Draw Kuching
 
+> **New: 🏢 Office Assistant.** A virtual office where Maya from Marketing designs social posts, edits videos and drives Chrome for you. See [`office-assistant/`](office-assistant/README.md), or double-click **`Start Office Assistant (Windows).bat`** / **`(Mac).command`**.
+
 A multiplayer party game. Players draw a character on paper and scan it with a phone. The character then comes to life on a projector, in a cartoon version of Kuching, Sarawak. Each phone becomes that player's controller.
 
 ```

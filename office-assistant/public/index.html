@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Office Assistant</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🏢 <span>Office Assistant</span></div>
+    <div class="status">
+      <span id="aiPill" class="pill">Checking…</span>
+      <span id="chromePill" class="pill muted">Chrome: closed</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="office-wrap" aria-label="Your office">
+      <div id="officeScene" class="office-scene"></div>
+      <form id="quickTask" class="quick-task">
+        <input id="quickInput" type="text" autocomplete="off" placeholder="Tell Maya what to do… e.g. open canva and instagram">
+        <button type="submit" class="btn primary">Go</button>
+      </form>
+    </section>
+
+    <aside id="panel" class="panel" aria-label="Maya's workspace">
+      <div class="panel-head">
+        <div class="worker">
+          <div class="avatar">👩🏽‍💼</div>
+          <div>
+            <h2>Maya</h2>
+            <p>Marketing · Social media design &amp; video editing</p>
+          </div>
+        </div>
+        <button id="closePanel" class="icon-btn" aria-label="Close panel">✕</button>
+      </div>
+
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="chrome" aria-selected="true">🌐 Chrome tasks</button>
+        <button role="tab" data-tab="design" aria-selected="false">🎨 Social design</button>
+        <button role="tab" data-tab="video" aria-selected="false">🎬 Video edit</button>
+      </nav>
+
+      <!-- Chrome tasks -->
+      <section class="tab-body" data-tab="chrome">
+        <p class="hint">Maya opens a real Chrome window and works in it while you watch. She opens tabs, searches, types and clicks.</p>
+        <label class="field">
+          <span>What should Maya do?</span>
+          <textarea id="taskInput" rows="3" placeholder="open canva, capcut and instagram, then search youtube for coffee shop reel ideas"></textarea>
+        </label>
+        <div class="chips" id="taskChips">
+          <button data-cmd="open canva, capcut, instagram, tiktok and meta business suite">🧰 Open my creative tools</button>
+          <button data-cmd="search youtube for trending reels ideas for small business">📈 Reel ideas</button>
+          <button data-cmd="search tiktok for trending sounds this week">🎵 Trending sounds</button>
+          <button data-cmd="open google trends">🔎 Google Trends</button>
+          <button data-cmd="search unsplash for coffee shop">📷 Free stock photos</button>
+          <button data-cmd="search canva for instagram post templates">🖼️ Canva templates</button>
+          <button data-cmd="open google, then type marketing ideas for a bakery and press enter">⌨️ Type a search</button>
+        </div>
+        <button id="runTask" class="btn primary wide">▶ Run task</button>
+        <div id="taskResult" class="result" hidden>
+          <ol id="taskLog" class="log"></ol>
+          <p id="taskSummary" class="summary"></p>
+        </div>
+      </section>
+
+      <!-- Social design -->
+      <section class="tab-body" data-tab="design" hidden>
+        <div class="grid2">
+          <label class="field"><span>Brand / business name</span><input id="dBrand" type="text" placeholder="Kopi Corner"></label>
+          <label class="field"><span>Platform</span>
+            <select id="dPlatform">
+              <option value="instagram-post">Instagram post (1:1)</option>
+              <option value="instagram-story">Instagram / FB story (9:16)</option>
+              <option value="tiktok-cover">TikTok cover (9:16)</option>
+              <option value="facebook">Facebook post</option>
+              <option value="linkedin">LinkedIn post</option>
+              <option value="x">X / Twitter post</option>
+              <option value="youtube-thumbnail">YouTube thumbnail</option>
+            </select>
+          </label>
+        </div>
+        <label class="field"><span>What is the post about?</span>
+          <textarea id="dBrief" rows="2" placeholder="Weekend promo: 20% off all iced lattes, Saturday and Sunday only"></textarea>
+        </label>
+        <div class="grid2">
+          <label class="field"><span>Tone (optional)</span><input id="dTone" type="text" placeholder="fun, premium, friendly…"></label>
+          <label class="field"><span>Photo (optional)</span><input id="dPhoto" type="file" accept="image/*"></label>
+        </div>
+        <button id="makeDesigns" class="btn primary wide">✨ Design 3 options</button>
+
+        <div id="designStudio" hidden>
+          <div id="designCards" class="design-cards"></div>
+          <div class="canvas-frame"><canvas id="designCanvas"></canvas></div>
+          <details class="edit-box" open>
+            <summary>Edit this design</summary>
+            <div class="grid2">
+              <label class="field"><span>Headline</span><input id="eHeadline" type="text"></label>
+              <label class="field"><span>Button text</span><input id="eCta" type="text"></label>
+            </div>
+            <label class="field"><span>Supporting line</span><input id="eSub" type="text"></label>
+            <div class="grid4">
+              <label class="field"><span>Layout</span>
+                <select id="eLayout"><option>bold</option><option>split</option><option>minimal</option><option>gradient</option><option>frame</option></select>
+              </label>
+              <label class="field color"><span>Background</span><input id="eBg" type="color"></label>
+              <label class="field color"><span>Accent</span><input id="eAccent" type="color"></label>
+              <label class="field color"><span>Text</span><input id="eText" type="color"></label>
+            </div>
+          </details>
+          <label class="field"><span>Caption</span><textarea id="eCaption" rows="3"></textarea></label>
+          <div class="row">
+            <button id="downloadDesign" class="btn primary">⬇ Download PNG</button>
+            <button id="copyCaption" class="btn">📋 Copy caption</button>
+            <button id="openPlatform" class="btn">🌐 Open platform in Chrome</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Video edit -->
+      <section class="tab-body" data-tab="video" hidden>
+        <p class="hint">Edit clips right here: trim, crop for Reels/TikTok/YouTube, add filters and text, then export. Your video never leaves this computer.</p>
+        <label class="field"><span>Video clip</span><input id="vFile" type="file" accept="video/*"></label>
+        <div id="videoStudio" hidden>
+          <div class="canvas-frame video"><canvas id="videoCanvas"></canvas></div>
+          <div class="row center">
+            <button id="vPlay" class="btn">▶ Play</button>
+            <span id="vTime" class="mono">0.0s</span>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Start at <b id="vStartLabel">0.0s</b></span><input id="vStart" type="range" min="0" max="1" step="0.1" value="0"></label>
+            <label class="field"><span>End at <b id="vEndLabel">0.0s</b></span><input id="vEnd" type="range" min="0" max="1" step="0.1" value="1"></label>
+          </div>
+          <div class="grid4">
+            <label class="field"><span>Format</span>
+              <select id="vAspect"><option value="9:16">9:16 Reels/TikTok</option><option value="1:1">1:1 Square</option><option value="4:5">4:5 Feed</option><option value="16:9">16:9 YouTube</option></select>
+            </label>
+            <label class="field"><span>Fit</span><select id="vFit"><option value="cover">Fill (crop)</option><option value="contain">Fit (blur bars)</option></select></label>
+            <label class="field"><span>Speed</span><select id="vSpeed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+            <label class="field"><span>Filter</span>
+              <select id="vFilter"><option value="none">None</option><option value="vivid">Vivid</option><option value="warm">Warm</option><option value="cool">Cool</option><option value="bw">Black &amp; white</option><option value="vintage">Vintage</option></select>
+            </label>
+          </div>
+          <div class="grid2">
+            <label class="check"><input id="vFade" type="checkbox" checked> Fade in &amp; out</label>
+            <label class="field"><span>Watermark (optional)</span><input id="vMark" type="text" placeholder="@kopicorner"></label>
+          </div>
+
+          <h3 class="sub">Text on screen</h3>
+          <div class="ai-row">
+            <input id="vBrief" type="text" placeholder="What is this video about? e.g. new matcha latte launch">
+            <button id="vPlan" class="btn">✨ Maya, write captions</button>
+          </div>
+          <div id="overlayList" class="overlay-list"></div>
+          <button id="addOverlay" class="btn small">+ Add text</button>
+          <div id="vCaptionBox" class="caption-box" hidden></div>
+
+          <div class="row">
+            <button id="vExport" class="btn primary">🎬 Export video</button>
+            <progress id="vProgress" max="1" value="0" hidden></progress>
+            <a id="vDownload" class="btn" hidden>⬇ Download</a>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
