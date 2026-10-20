@@ -66,6 +66,17 @@ svg.working .hand-r { animation: tap 0.3s 0.15s infinite alternate; }
 @keyframes eyes { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(0.1); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
 
+.office-scene.is-3d { position: relative; aspect-ratio: 16 / 10; min-height: 360px; max-height: calc(100vh - 150px); line-height: normal; background: #f1efea; }
+.office-scene.is-3d canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.label-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.room-label, .name-tag, .bubble { font-family: "IBM Plex Mono", ui-monospace, monospace; pointer-events: auto; white-space: nowrap; user-select: none; }
+.room-label { background: rgba(255, 255, 255, 0.92); color: #3a3f4b; border: 1px solid #d9d4ca; padding: 2px 9px; font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.15s, color 0.15s; }
+.room-label.soon { color: #8b8f99; }
+.room-label.hover, .room-label:hover { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+.name-tag { background: rgba(255, 255, 255, 0.85); color: #555b66; border: 1px solid #d9d4ca; padding: 0 6px; font-size: 11px; border-radius: 2px; pointer-events: none; }
+.name-tag.maya { background: #7c3aed; color: #fff; border-color: #7c3aed; font-weight: 600; }
+.bubble { background: #fff; color: #4c1d95; border: 2px solid #7c3aed; border-radius: 12px; padding: 4px 10px; font-size: 12px; font-weight: 600; font-family: Poppins, "Segoe UI", sans-serif; box-shadow: 0 4px 12px rgba(76, 29, 149, 0.2); pointer-events: none; position: relative; }
+.bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #7c3aed; }
 .quick-task { display: flex; gap: 8px; }
 .quick-task input { flex: 1; min-width: 0; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
 
@@ -144,6 +155,8 @@ progress { flex: 1; min-width: 120px; height: 10px; accent-color: var(--accent);
   .panel { position: static; max-height: none; }
 }
 @media (max-width: 560px) {
+  .office-scene.is-3d { aspect-ratio: 4 / 3; min-height: 0; }
+  .room-label { font-size: 10px; padding: 1px 5px; letter-spacing: 0.06em; }
   .topbar, .layout { padding-left: 16px; padding-right: 16px; }
   .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid2 { grid-template-columns: minmax(0, 1fr); }

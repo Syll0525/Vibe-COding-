@@ -17,7 +17,16 @@ npm start                                   # works offline with built-in rules 
 ANTHROPIC_API_KEY=sk-ant-... npm start      # Maya plans tasks and writes copy with Claude
 ```
 
-Click **Maya** in the office to open her workspace, or type a task in the bar under the office.
+The office is a 3D open-plan floor: drag to look around, scroll or pinch to zoom. The top floor has the **Lounge**, **Manager** and your own **Ruang Boss**. The main floor has the department rooms. Click a room (or its label) to put that team to work, or type a task in the bar under the office:
+
+| Room | Opens |
+|---|---|
+| Digital Marketing (Maya's desk), Automation, Ruang Boss | 🌐 Chrome tasks |
+| Sosmed Specialist, Content Manager | 🎨 Social design |
+| Video Editing | 🎬 Video edit |
+| Product Developer, Data Analyst, Mentoring, Platform & Web, Lounge, Manager | Hiring soon (grey labels) |
+
+While Maya works, that room's monitors light up and its workers start typing. If the computer can't show 3D, the office falls back to a flat picture (`public/office.svg`).
 
 ## What Maya can do
 
@@ -68,7 +77,7 @@ Load a clip and edit it in the browser. Your video never leaves your computer.
 
 ## Hiring more workers
 
-The **Sales** and **Finance** desks are empty for now. Each worker is a desk in `public/office.svg` plus a panel in `public/index.html`. Their skills live in `server/` (Chrome control in `browser.js` and `agent.js`, Maya's copywriting in `marketing.js`).
+Rooms with grey labels don't have skills yet. Rooms and desks are listed in `ROOMS` in `public/js/office3d.js`; give a room an `action` to connect it to a panel in `public/index.html`. Skills live in `server/` (Chrome control in `browser.js` and `agent.js`, Maya's copywriting in `marketing.js`).
 
 ```bash
 npm test     # parser, URL and template tests

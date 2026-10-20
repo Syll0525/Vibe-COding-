@@ -17,6 +17,7 @@ const HOST = process.env.HOST || '127.0.0.1';
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(here, '..', 'public')));
+app.use('/vendor/three', express.static(path.join(here, '..', 'node_modules', 'three')));
 
 app.get('/api/status', (_req, res) => {
   res.json({ ai: aiEnabled(), browser: browserStatus(), platforms: PLATFORMS });

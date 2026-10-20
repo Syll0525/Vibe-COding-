@@ -5,7 +5,11 @@ import { initDesign } from './design.js';
 import { initVideo } from './video.js';
 
 const $ = (id) => document.getElementById(id);
-let svg = null;
+let svg = null;      // 2D fallback picture
+let office3d = null; // 3D office
+
+// Which rooms light up while Maya works on each kind of task.
+const BUSY_ROOMS = { chrome: ['digital', 'automation', 'boss'], design: ['sosmed', 'content'], video: ['video'], idle: [] };
 
 export function toast(msg, ms = 2600) {
   const t = $('toast');
@@ -17,6 +21,12 @@ export function toast(msg, ms = 2600) {
 
 /** Puts Maya into a mood: what her wall screen shows and what her bubble says. */
 export function setMaya(view, bubble, working = false) {
+  if (office3d) {
+    office3d.setWorking(working ? BUSY_ROOMS[view] || [] : []);
+    if (bubble) office3d.setBubble(bubble);
+    office3d.working = working;
+    return;
+  }
   if (!svg) return;
   svg.querySelectorAll('.screen-view').forEach((g) => { g.style.display = g.dataset.view === view ? '' : 'none'; });
   svg.classList.toggle('working', working);
@@ -24,6 +34,7 @@ export function setMaya(view, bubble, working = false) {
 }
 
 function setScreenUrl(text) {
+  if (office3d) { office3d.setBubble(text.length > 34 ? text.slice(0, 33) + '…' : text); return; }
   const el = svg?.getElementById('screenUrl');
   if (el) el.textContent = text.length > 44 ? text.slice(0, 43) + '…' : text;
 }
@@ -50,7 +61,7 @@ function selectTab(name) {
   document.querySelectorAll('.tab-body').forEach((s) => { s.hidden = s.dataset.tab !== name; });
   const moods = { chrome: ['idle', 'Where should I go? 🌐'], design: ['design', 'Let\'s design! 🎨'], video: ['video', 'Ready to edit 🎬'] };
   const [view, bubble] = moods[name] || moods.chrome;
-  if (!svg?.classList.contains('working')) setMaya(view, bubble);
+  if (!svg?.classList.contains('working') && !office3d?.working) setMaya(view, bubble);
 }
 
 // --- Chrome tasks ------------------------------------------------------------
@@ -128,7 +139,22 @@ async function refreshStatus() {
 
 // --- boot ------------------------------------------------------------------
 
+function onRoomClick(room) {
+  if (room.action) openPanel(room.action);
+  else toast(`${room.label}: this team is hiring soon. Maya covers marketing for now.`);
+}
+
 async function loadOffice() {
+  try {
+    const { createOffice3D } = await import('./office3d.js');
+    $('officeScene').classList.add('is-3d');
+    office3d = createOffice3D($('officeScene'), { onRoomClick });
+    return;
+  } catch (err) {
+    console.warn('3D office unavailable, showing the 2D picture:', err);
+    $('officeScene').classList.remove('is-3d');
+    $('officeScene').innerHTML = '';
+  }
   const text = await (await fetch('office.svg')).text();
   $('officeScene').innerHTML = text;
   svg = $('officeScene').querySelector('svg');
